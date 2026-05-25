@@ -8179,11 +8179,41 @@ Now output ONLY the JSON object:`;
     adminFetchType = type;
     document.querySelectorAll('[data-fetch-type]').forEach(b => b.classList.toggle('active', b.dataset.fetchType === type));
     document.querySelectorAll('[data-fetch-panel]').forEach(p => p.hidden = p.dataset.fetchPanel !== type);
+    // 보강 모드에서는 count/model 행 숨김 (enrich 패널 안에 자체 컨트롤 있음)
+    const sharedRow = document.querySelector('#view-admin .admin-fetch-row');
+    if (sharedRow) sharedRow.style.display = (type === 'enrich') ? 'none' : '';
     // sensible default counts per type
     const cnt = document.getElementById('admin-fetch-count');
     if (type === 'combos') cnt.value = 5;
     else if (type === 'quotes') cnt.value = 15;
-    else cnt.value = 20;
+    else if (type === 'expressions') cnt.value = 20;
+    // for enrich, count is N/A — uses its own batch-size input
+    if (type === 'enrich') refreshEnrichCounts();
+    // change main submit button label
+    const submitBtn = document.getElementById('admin-fetch-submit');
+    if (type === 'enrich') {
+      submitBtn.textContent = '✨ 보강 시작';
+      submitBtn.style.display = '';
+      // re-show the submit by moving it under the enrich panel via z-index trick: easier to keep it visible
+      // Actually since sharedRow is hidden, the button is also hidden. Re-expose by toggling row back but hiding only the count/model fields.
+      sharedRow.style.display = '';
+      sharedRow.querySelectorAll('.admin-field').forEach(f => f.style.display = 'none');
+    } else {
+      submitBtn.textContent = '🤖 생성 시작';
+      sharedRow.querySelectorAll('.admin-field').forEach(f => f.style.display = '');
+    }
+  }
+
+  async function refreshEnrichCounts() {
+    try {
+      const r = await fetch('/api/expressions/');
+      if (!r.ok) return;
+      const d = await r.json();
+      const total = d.count || 0;
+      const missing = (d.expressions || []).filter(e => !(e.tip && e.tip.trim())).length;
+      document.getElementById('admin-enrich-missing').textContent = missing;
+      document.getElementById('admin-enrich-total').textContent = total;
+    } catch (e) {}
   }
 
   function renderAddedPanelGeneric(type, items) {
@@ -8224,6 +8254,23 @@ Now output ONLY the JSON object:`;
         </div>`).join('');
       goBtn.textContent = '📚 전체 콤보에서 보기 →';
       goBtn.onclick = () => switchAdminSection('combos');
+    } else if (type === 'enrich') {
+      list.innerHTML = items.map(e => `
+        <div class="lib-row" data-id="${e.id}">
+          <div class="lib-row-en">${escapeHtml(e.en)}${e.category ? `<span class="lib-row-cat">${escapeHtml(e.category)}</span>` : ''}</div>
+          <div class="lib-row-ko">${escapeHtml(e.ko || '')}</div>
+          ${e.tip ? `<div class="lib-row-ko" style="margin-top:4px;color:var(--success);">💡 ${escapeHtml(e.tip)}</div>` : ''}
+          ${e.example ? `<div class="lib-row-ko" style="margin-top:2px;font-style:italic;">📝 ${escapeHtml(e.example)}</div>` : ''}
+        </div>`).join('');
+      list.querySelectorAll('.lib-row').forEach(row => {
+        row.addEventListener('click', () => {
+          const id = parseInt(row.dataset.id, 10);
+          const exp = adminExpressions.find(x => x.id === id) || items.find(x => x.id === id);
+          if (exp) { currentExpression = exp; openExpressionModal(); }
+        });
+      });
+      goBtn.textContent = '💬 전체 표현에서 보기 →';
+      goBtn.onclick = () => switchAdminSection('expressions');
     }
   }
 
@@ -8232,8 +8279,57 @@ Now output ONLY the JSON object:`;
     const resEl = document.getElementById('admin-fetch-result');
     const btn   = document.getElementById('admin-fetch-submit');
     errEl.hidden = true; resEl.hidden = true;
-    const count = parseInt(document.getElementById('admin-fetch-count').value, 10) || 20;
     const model = document.getElementById('admin-fetch-model').value;
+
+    // === Enrich mode is a separate flow (loop-aware) ===
+    if (adminFetchType === 'enrich') {
+      const mode = document.getElementById('admin-enrich-mode').value;
+      const batchSize = parseInt(document.getElementById('admin-enrich-batch').value, 10) || 20;
+      const autoLoop = document.getElementById('admin-enrich-auto').checked;
+      btn.disabled = true; const orig = btn.textContent;
+      let aggregateUpdated = 0, aggregateProcessed = 0, aggregateFailed = 0;
+      let allItems = [];
+      let offset = 0;
+      try {
+        for (let iter = 0; iter < (autoLoop ? 50 : 1); iter++) {
+          btn.textContent = `⏳ 보강 중... (${iter + 1}번째 배치)`;
+          const r = await adminFetch('/api/admin/expressions/enrich/', {
+            method: 'POST',
+            body: JSON.stringify({ mode, batch_size: batchSize, model, offset }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+          aggregateProcessed += data.processed;
+          aggregateUpdated   += data.updated;
+          aggregateFailed    += data.failed;
+          allItems = [...allItems, ...(data.batch_items || [])];
+          offset = data.next_offset;
+          // Live-update result + added panel each iteration
+          resEl.classList.remove('is-error');
+          resEl.innerHTML = `✅ 처리 <strong>${aggregateProcessed}</strong> · 업데이트 <strong>${aggregateUpdated}</strong> · 실패 ${aggregateFailed} · 빈 팁 남음 <strong>${data.remaining_missing_tips}</strong> / ${data.total} (모델: ${data.model}, 모드: ${data.mode})`;
+          resEl.hidden = false;
+          renderAddedPanelGeneric('enrich', allItems);
+          // Refresh admin expression cache for newly enriched items
+          for (const it of (data.batch_items || [])) {
+            const idx = adminExpressions.findIndex(x => x.id === it.id);
+            if (idx >= 0) adminExpressions[idx] = it;
+            else adminExpressions.push(it);
+          }
+          renderAdmExpressions();
+          refreshEnrichCounts();
+          if (data.done || (data.processed === 0)) break;
+          if (!autoLoop) break;
+        }
+      } catch (e) {
+        errEl.textContent = e.message; errEl.hidden = false;
+      } finally {
+        btn.disabled = false; btn.textContent = orig;
+      }
+      return;
+    }
+
+    // === Normal generation modes (expressions / quotes / combos) ===
+    const count = parseInt(document.getElementById('admin-fetch-count').value, 10) || 20;
     btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ 생성 중...';
     try {
       let url, body, summaryTail;
