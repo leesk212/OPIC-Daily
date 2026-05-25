@@ -11,4 +11,5 @@ urlpatterns = [
     path('import/', views.import_data, name='import'),
     path('settings/', views.settings_view, name='settings'),
     path('test-notify/', views.test_notify, name='test_notify'),
+    path('run-notify/', views.run_notify, name='run_notify'),
 ]

@@ -86,37 +86,61 @@ def compute_notify_hours(s: dict) -> list[int]:
     return hours
 
 
-def _regenerate_crontab() -> None:
-    """Best-effort crontab refresh after settings change.
+CRON_TAG = '# OPIC-Daily notify'
 
-    - 컨테이너: write_crontab가 /etc/cron.d/opic-daily 파일을 다시 씀
-      → cron 데몬이 ~60초 안에 자동 인식
-    - 호스트: /etc/cron.d가 없으면 install-cron.sh --quiet 로 호스트
-      user crontab을 갱신 (crontab 명령 사용)
-    둘 다 실패해도 settings 저장은 성공시키기 위해 silent.
-    """
+
+def _build_user_cron_lines(hours: list[int]) -> list[str]:
+    """현재 venv python + 프로젝트 경로 기준 user-crontab 형식 5필드 라인 목록."""
+    from django.conf import settings as ds
+    import sys
+    py = sys.executable  # 현재 실행 중인 venv python
+    project = str(ds.BASE_DIR)
+    log = f'{project}/data/notify.log'
+    return [
+        f'0 {h} * * * cd {project} && {py} manage.py notify >> {log} 2>&1 {CRON_TAG}'
+        for h in hours
+    ]
+
+
+def _install_user_crontab(hours: list[int]) -> tuple[bool, str]:
+    """호스트 user crontab을 직접 갱신 — subprocess만 사용 (Django 재시작 없음).
+    Returns (success, summary). silent on missing `crontab` cmd."""
+    import shutil, subprocess
+    if not shutil.which('crontab'):
+        return False, 'crontab 명령 없음'
     try:
-        from django.core.management import call_command
-        call_command('write_crontab', verbosity=0)
+        cur = subprocess.run(['crontab', '-l'], capture_output=True, text=True, timeout=5)
+        existing = cur.stdout if cur.returncode == 0 else ''
+        kept = [ln for ln in existing.splitlines() if CRON_TAG not in ln and ln.strip()]
+        new_lines = _build_user_cron_lines(hours)
+        merged = '\n'.join(kept + new_lines) + ('\n' if (kept or new_lines) else '')
+        subprocess.run(['crontab', '-'], input=merged, text=True, timeout=5, check=True)
+        if not hours:
+            return True, '알림 비활성화 (cron 라인 0개)'
+        return True, f'{len(hours)}개 시점: {", ".join(f"{h:02d}:00" for h in hours)}'
     except Exception as e:
-        logger.info(f'write_crontab skipped: {e}')
+        return False, f'{type(e).__name__}: {e}'
 
-    # 호스트 fallback: /etc/cron.d 못 쓰는 환경이면 user crontab 직접 갱신
+
+def _regenerate_crontab() -> None:
+    """Best-effort crontab refresh after settings change. Non-blocking:
+    fires a background thread so settings POST returns immediately even if
+    the host's `crontab` command hangs on a macOS permission prompt etc."""
+    import threading
     from pathlib import Path
-    if not Path('/etc/cron.d').exists():
+
+    def _worker():
         try:
-            import subprocess
-            from django.conf import settings as ds
-            script = Path(ds.BASE_DIR) / 'install-cron.sh'
-            if script.is_file():
-                subprocess.run(
-                    [str(script), '--quiet'],
-                    cwd=str(ds.BASE_DIR),
-                    timeout=10,
-                    capture_output=True,
-                )
+            from django.core.management import call_command
+            call_command('write_crontab', verbosity=0)
         except Exception as e:
-            logger.info(f'host install-cron.sh skipped: {e}')
+            logger.info(f'write_crontab skipped: {e}')
+        if not Path('/etc/cron.d').exists():
+            hours = compute_notify_hours(get_settings())
+            ok, msg = _install_user_crontab(hours)
+            logger.info(f'host crontab update: ok={ok} — {msg}')
+
+    threading.Thread(target=_worker, daemon=True, name='crontab-regen').start()
 
 
 logger = logging.getLogger(__name__)
@@ -308,6 +332,7 @@ def settings_view(request):
             url = tunnel_file.read_text().strip()
             if url:
                 s['tunnel_url'] = url
+        s['last_notify_run'] = _notify_log_mtime()
         return JsonResponse(s)
 
     # POST — save
@@ -354,6 +379,49 @@ def settings_view(request):
         _regenerate_crontab()
     s['notify_hours_preview'] = compute_notify_hours(s)
     return JsonResponse(s)
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def run_notify(request):
+    """대시보드 '🚀 지금 실행' 버튼용. 실제 cron이 부르는 그 명령(`manage.py notify`)을
+    그대로 호출. 오늘 일기/Opic 완료 상태에 따라 ntfy 발송 OR 스킵 응답."""
+    from io import StringIO
+    from django.core.management import call_command
+
+    buf = StringIO()
+    try:
+        # --force 옵션으로 완료 여부 관계없이 메시지 발사 (테스트 목적)
+        force = bool(request.GET.get('force')) or bool(
+            (json.loads(request.body or b'{}') or {}).get('force')
+        )
+    except Exception:
+        force = False
+    args = ['notify']
+    if force:
+        args.append('--force')
+    try:
+        call_command(*args, stdout=buf)
+        out = buf.getvalue().strip()
+        last_run_iso = _notify_log_mtime()
+        return JsonResponse({'status': 'ok', 'output': out, 'lastRun': last_run_iso})
+    except Exception as e:
+        logger.exception('run_notify failed')
+        return JsonResponse({'status': 'error', 'error': f'{type(e).__name__}: {e}'}, status=500)
+
+
+def _notify_log_mtime() -> str | None:
+    """data/notify.log mtime (있으면) — 가장 최근에 cron이 발사된 시점 근사치."""
+    from pathlib import Path
+    from datetime import datetime, timezone
+    from django.conf import settings as ds
+    p = Path(ds.BASE_DIR) / 'data' / 'notify.log'
+    if not p.exists():
+        return None
+    try:
+        return datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc).isoformat()
+    except Exception:
+        return None
 
 
 @csrf_exempt

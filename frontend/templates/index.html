@@ -2789,6 +2789,14 @@
       </div>
       <div id="notify-hours-preview" style="margin-top:10px; font-size:12.5px; color:var(--accent); font-weight:600;"></div>
       <div style="margin-top:6px; font-size:11px; color:var(--muted);">횟수=0 이면 알림 비활성화. 24시 넘어가는 시간은 자동 제외.</div>
+
+      <div style="margin-top:14px; padding-top:12px; border-top:1px dashed rgba(245,158,11,0.25); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button type="button" class="ghost-btn" id="run-notify-now" style="padding:6px 12px; font-size:12px;">🚀 지금 실행 (cron 테스트)</button>
+        <div style="font-size:11px; color:var(--muted);">
+          마지막 실행: <span id="last-notify-run" style="color:var(--text-2); font-weight:600;">기록 없음</span>
+        </div>
+      </div>
+      <div id="run-notify-result" style="margin-top:8px; font-size:11.5px; line-height:1.55; color:var(--text-2); white-space:pre-wrap; max-height:120px; overflow-y:auto;"></div>
     </div>
 
     <div class="settings-row" style="margin-top:18px;">
@@ -3525,6 +3533,111 @@
         { type: 'Description', text: "Tell me about your international business trips. Where do you usually travel, how often, and what's the purpose?" },
         { type: 'Past Experience', text: "Tell me about a memorable international business trip. Where did you go, what happened, and what surprised you?" },
         { type: 'Comparison', text: "How are international business trips different from domestic ones? What changes about your preparation and the experience?" }
+      ]
+    },
+    // ===== 1등급 교안 기반 (Lesson 09–23) =====
+    {
+      id: 'gatherings', topic: '모임·기념일 (Gatherings / Celebrations)',
+      questions: [
+        { type: 'Description', text: "Tell me about some of the gatherings or celebrations that happen where you live. Describe where they take place, who's there, what the purpose is, and what happens from beginning to end." },
+        { type: 'Past Experience', text: "Sometimes unexpected things can happen at celebrations or gatherings. Tell me about something unexpected that happened at a gathering in your area. What was it, and how did people react?" },
+        { type: 'Comparison', text: "Gatherings in small towns are often different from those in big cities. Tell me about some similarities and differences between celebrations in small towns and big cities in your country." }
+      ]
+    },
+    {
+      id: 'groceries', topic: '식품·건강식 (Healthy Foods / Groceries)',
+      questions: [
+        { type: 'Description', text: "Many people try to eat healthy these days. What kinds of foods are considered healthy in your country, and why are they good for us?" },
+        { type: 'Past Experience', text: "Tell me about a memorable experience you had while eating something. It could be good or bad — what happened and why was it so memorable?" },
+        { type: 'Comparison', text: "How has the way people buy groceries changed over the past 20 years? What trends or changes have you noticed when comparing today's grocery shopping with the past?" }
+      ]
+    },
+    {
+      id: 'internet', topic: '인터넷 (Internet)',
+      questions: [
+        { type: 'Description', text: "Tell me about the technology and internet you use in your daily life. How often do you use it, and how does it help you? Tell me everything about the things you do online." },
+        { type: 'Past Experience', text: "Talk about something memorable you've seen or experienced on the internet. What was it, and why was it so memorable to you?" },
+        { type: 'Comparison', text: "How does internet usage vary across different age groups in your country? What do younger people do online versus older people? Why do you think there's a difference?" }
+      ]
+    },
+    {
+      id: 'restaurant', topic: '레스토랑 (Restaurants)',
+      questions: [
+        { type: 'Description', text: "I'd like to know about restaurants in your country. What do typical restaurants look like? What kind of food do they serve, and how are the people who work there? Give me all the details." },
+        { type: 'Past Experience', text: "Tell me about a restaurant you ate at recently. What kind of restaurant was it, who did you go with, and what did you eat? Did you like the food? Give me all the details." },
+        { type: 'Comparison', text: "Now tell me about a restaurant you used to go to as a child. What was it like and what did you eat? How is it different from the restaurants you go to today?" }
+      ]
+    },
+    {
+      id: 'fashion', topic: '패션 (Fashion)',
+      questions: [
+        { type: 'Description', text: "I'd like to know how people dress in your country. What kinds of clothes do they usually wear, and what's special about the fashion styles in your country?" },
+        { type: 'Past Experience', text: "Talk about a time when you went shopping for clothes. Where did you go and what did you buy? What was memorable about that shopping experience?" },
+        { type: 'Comparison', text: "How have fashion trends in your country changed over the years? Do people in your country follow the latest fashions? If so, why?" }
+      ]
+    },
+    {
+      id: 'friends', topic: '친구 (Friends)',
+      questions: [
+        { type: 'Description', text: "Describe a close friend of yours. What is he or she like, and what's special about that person? How did you meet, and how long have you been friends?" },
+        { type: 'Past Experience', text: "Talk about a time when you visited a friend or did something memorable with them. What did you do together, and what made the visit so special? Tell me everything from beginning to end." },
+        { type: 'Comparison', text: "Pick two of your friends and compare them. What do they have in common, and what makes them different from each other? Give me specific examples." }
+      ]
+    },
+    {
+      id: 'career', topic: '산업·커리어 (Industry / Career)',
+      questions: [
+        { type: 'Description', text: "Talk about one of the rising industries or companies in your country. Why is it famous, and what's special about it? Do you personally want to work in that industry or for that company?" },
+        { type: 'Past Experience', text: "What kinds of effort have you made so far for your career? Tell me about any work experiences or personal effort you've put into preparing for your future career." },
+        { type: 'Comparison', text: "What kind of impact does that industry or company have on your country? What kind of benefits does it bring to people's lives? Give me all the details." }
+      ]
+    },
+    {
+      id: 'bank', topic: '은행 (Bank)',
+      questions: [
+        { type: 'Description', text: "Let's talk about the bank you go to. Where is it located, and what is it like? What do you do from the moment you walk into the bank until you walk out? How are the people who work there?" },
+        { type: 'Past Experience', text: "Problems can occur at the bank — maybe you forgot your ID or your card got declined. Tell me about a problem you've personally had at a bank, and how you solved it." },
+        { type: 'Comparison', text: "Banks have changed a lot over the years. How are banks today different from those in the past? What impact have those changes had on customers? Give me all the details." }
+      ]
+    },
+    {
+      id: 'recycling', topic: '재활용 (Recycling)',
+      questions: [
+        { type: 'Description', text: "I'd like to know about how recycling is practiced in your country. What do people specifically do? What's special about recycling where you live? Give me all the details." },
+        { type: 'Routine', text: "Now, tell me about how you personally recycle. Do you separate the recycling every day? Where do you take it? Tell me everything about how you practice recycling in your daily life." },
+        { type: 'Comparison', text: "How is recycling today different from when you were young? Are there any big differences or similarities? Tell me about how recycling has changed over the years." }
+      ]
+    },
+    {
+      id: 'hotel', topic: '호텔 (Hotel)',
+      questions: [
+        { type: 'Description', text: "I'd like to know about hotels in your country. What are they like, and where are they located? Are they different from hotels in other countries? Tell me about the hotels in your country in as much detail as possible." },
+        { type: 'Routine', text: "Tell me about the things you do when you arrive at a hotel. What's the first thing you do? Walk me through everything you do when you check into a hotel." },
+        { type: 'Past Experience', text: "Tell me about a memorable hotel you stayed at. Why was that hotel special, and how did you pick it in the first place? What do you remember most about your stay there?" }
+      ]
+    },
+    {
+      id: 'furniture', topic: '가구 (Furniture)',
+      questions: [
+        { type: 'Description', text: "What kind of furniture do you have at home? Tell me about each type of furniture, and your favorite piece. Why do you like it, and when did you get it?" },
+        { type: 'Past Experience', text: "Tell me about a time when you had problems with your furniture. Maybe something got damaged or broken. What exactly happened, and how did you solve the problem?" },
+        { type: 'Comparison', text: "Tell me about the furniture you had when you were young. How is it different from the furniture you have today? Give me specific examples of the differences." }
+      ]
+    },
+    {
+      id: 'reservation', topic: '예약 (Appointments / Reservations)',
+      questions: [
+        { type: 'Description', text: "Tell me about appointments and reservations you make in your life. What kinds are they, and how do you make them? What usually happens at those appointments?" },
+        { type: 'Past Experience', text: "Talk about an appointment you had in the past — maybe with a doctor, a dentist, or a hairdresser. What did you do to make the appointment, and what actually happened when you got there?" },
+        { type: 'Past Experience', text: "Unexpected things can happen during an appointment. Talk about a memorable incident you experienced during an appointment. What exactly happened, and how did you deal with the situation?" }
+      ]
+    },
+    {
+      id: 'holidays', topic: '명절 (Holidays / Traditions)',
+      questions: [
+        { type: 'Description', text: "What do you do for family holidays in your country? Do you get together with your family? What do you do together, and what kind of food do you eat? Tell me everything about your holiday traditions." },
+        { type: 'Past Experience', text: "Talk about a memorable incident that happened during a holiday. Why was that incident unforgettable? Who was involved? Tell me everything from beginning to end." },
+        { type: 'Comparison', text: "Have holidays or holiday customs in your country changed over the years? Are they different from what they used to be? If so, tell me about the changes holidays have gone through." }
       ]
     }
   ];
@@ -5864,6 +5977,137 @@ Now output ONLY the JSON object:`;
         <span class="tips-bad">and etc · so so · also (문장 끝맺음으로)</span>
       </div>`
     },
+    // ===== 1등급 교안 (Lesson 02, 24, 25) =====
+    {
+      title: "AL 등급 고급 표현 & 강세",
+      sub: "1등급 교안 Lesson 02 — 시제·부사·구동사·연결어",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">시제 3종 자연스럽게 섞기</div>
+        • 현재: <em>"I live in an apartment complex with my family."</em><br>
+        • 과거: <em>"I used to go there when I was younger."</em><br>
+        • 현재완료: <em>"I have lived in the same place for 10 years."</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">고급 부사어 (의식해서 끼워넣기)</div>
+        <code>normally</code> · <code>usually</code> · <code>mostly</code> · <code>actually</code> · <code>mainly</code> · <code>personally</code> · <code>probably</code><br>
+        <em>"I personally prefer spending time at home when I'm off."</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">고급 형용사</div>
+        amazing · incredible · fantastic · pleasant · memorable · enjoyable · scenic · sensational · overwhelming · picturesque · sophisticated · nerve-racking
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">구동사 (Phrasal Verbs)</div>
+        <code>meet up</code> · <code>eat out</code> · <code>go out</code> · <code>look up</code> · <code>find out</code> · <code>get off</code> · <code>come up with</code><br>
+        <em>"I had to eat out almost every day."</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">비교급/최상급 강조</div>
+        • <em>"a lot better than the past"</em><br>
+        • <em>"so much better"</em><br>
+        • <em>"the best ___ I have ever been to"</em><br>
+        • <em>"one of the most memorable incidents I have ever had"</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">연결어 셋업</div>
+        • 강조: <code>in fact</code> · <code>of course</code><br>
+        • 예시: <code>for instance</code> · <code>such as N, N, and even N</code><br>
+        • 전환: <code>on the other hand</code> · <code>frankly speaking</code><br>
+        • 마무리: <code>overall</code> · <code>in the end</code> · <em>"So, that's about it."</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">발음 — 강세 중심</div>
+        영어는 <strong>내용어(명사·동사·형용사·부정어)에 강세</strong>, 기능어(대명사·조동사·전치사·관사)는 약화.<br>
+        주의: Schwa(슈와) 현상 · Dark L (milk, full) · R vs L (long/wrong) · 합성어 강세 (<em>movie theater, well-known</em>)
+      </div>`
+    },
+    {
+      title: "롤플레이 1 — 직접/전화 질문하기",
+      sub: "1등급 교안 Lesson 24 — 인사 → 목적 → 질문 3~4개 → 마무리",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">① 인사 (Greeting)</div>
+        • 모르는 상대: <em>"Hello, there."</em> / <em>"Excuse me."</em><br>
+        • 친구: <em>"Hello, John. This is Jessie. How have you been?"</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">② 목적 밝히기</div>
+        • 전화: <em>"I am calling to ask you some questions about [주제]."</em><br>
+        • 방문: <em>"I am here to ask you some questions about [주제]."</em><br>
+        • 추가: <em>"I'd like to [원하는 일]."</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">③ 질문 템플릿 12종 — 3~4개 골라 쓰기</div>
+        • 종류: <em>"What kinds of [N] do you have?"</em><br>
+        • 생김새: <em>"What does it look like?"</em><br>
+        • 위치: <em>"I wonder where it is located. Can you give me some directions?"</em><br>
+        • 가격: <em>"How much does it cost?"</em><br>
+        • 시간: <em>"What time does it open or close?"</em><br>
+        • 소요시간: <em>"How long does it take to V?"</em><br>
+        • 가능 여부: <em>"Is it possible for you to [특정 일]?"</em><br>
+        • 도움 요청: <em>"Do you mind helping me out on that?"</em><br>
+        • 예약: <em>"Can I book [용건] for [인원수]?"</em><br>
+        • 약속: <em>"Can I make an appointment with [사람]?"</em><br>
+        • 할인: <em>"I wonder if you have any promotions going on."</em><br>
+        • 물건 찾기: <em>"Where can I find some [물건]?"</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">④ 마무리 (Closing)</div>
+        • 가게: <em>"Please let me know as soon as possible."</em><br>
+        • 친구: <em>"Get back to me when you get this, alright? Talk to you later. See ya."</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">샘플 — 콘서트 문의</div>
+        <div class="tips-good">"Hello, there. I am calling to ask you some questions about concerts tonight. I'd like to watch a concert with my friend. So, what kinds of concerts do you have? How much does a ticket cost? I wonder if you have any promotions going on. What time does the concert start and how long does it take? Please let me know as soon as possible."</div>
+      </div>
+      💡 시험에서 <strong>"ask three or four questions"</strong>로 명시되면 그 개수 꼭 채우기.`
+    },
+    {
+      title: "롤플레이 2 — 문제 + 대안 제시 5단",
+      sub: "1등급 교안 Lesson 25 — 인사 → 사과 톤 목적 → 상황 설명 → 대안 → 사과/마무리",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">① 인사 + ② 목적 (나쁜 소식 톤)</div>
+        • 친구: <em>"Hello, Jenny. This is Jina again."</em><br>
+        • 가게: <em>"Hello, this is a customer who visited your store last night."</em><br>
+        • 시그널: <em>"I am so sorry but I have some bad news."</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">③ 상황 설명</div>
+        • <em>"I've got a problem. The problem is [상황]."</em><br>
+        • 약속 못 감: <em>"I don't think I can make it because something has come up."</em><br>
+        • 제품 문제: <em>"There is something wrong with the item."</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">④ 대안 제시 6종 — 외워둘 표현</div>
+        1. 교환: <em>"I'd like to exchange it for a new one."</em><br>
+        2. 환불: <em>"I'd like to get a refund."</em><br>
+        3. 할인: <em>"I'd like to get a discount."</em><br>
+        4. 수리: <em>"I want you to repair it as soon as possible."</em><br>
+        5. 추천 받기: <em>"Do you have any other suggestions or recommendations?"</em><br>
+        6. 일정 변경: <em>"I'd like to reschedule the plan."</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">제안 표현 4종</div>
+        <em>"What about V-ing?"</em> · <em>"How about V-ing?"</em> · <em>"Why don't we V ~?"</em> · <em>"Let's V ~"</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">🔥 핵심 패턴 — First / If not / If that's not an option</div>
+        대안을 단순 나열 말고 <strong>우선순위로</strong>:
+        <div class="tips-good">"First, I'd like to exchange it. If not, I'd like to get a refund. If that's not an option, I want you to repair it."</div>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">⑤ 사과 + 마무리</div>
+        • <em>"I am so sorry for what happened."</em> / <em>"I am so sorry for all the trouble."</em><br>
+        • 친구일 때: <em>"I will make it up to you soon."</em><br>
+        • 마무리: <em>"Please let me know as soon as possible."</em> / <em>"Thanks in advance."</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">상황별 자주 묶이는 대안</div>
+        • 콘서트 못 감 → 다른 날 약속<br>
+        • 호텔 객실 더러움 → 청소 / 룸 변경 / 할인<br>
+        • 가구 도착 문제 → 교환 / 환불<br>
+        • 비행기 취소 → 다른 항공편 / 일정 변경
+      </div>`
+    },
   ];
 
   const DIARY_TIPS = [
@@ -6376,6 +6620,7 @@ Now output ONLY the JSON object:`;
   });
   document.getElementById('settings-save').addEventListener('click', saveSettings);
   document.getElementById('settings-test').addEventListener('click', testNotifyNow);
+  document.getElementById('run-notify-now').addEventListener('click', () => runNotifyNow(true));
 
   // Dashboard
   document.getElementById('card-diary').addEventListener('click', () => navigateTo('diary-write'));
@@ -6519,6 +6764,42 @@ Now output ONLY the JSON object:`;
       el.style.color = 'var(--accent)';
     }
   }
+  function renderLastNotifyRun(iso) {
+    const el = document.getElementById('last-notify-run');
+    if (!iso) { el.textContent = '기록 없음'; return; }
+    try {
+      const d = new Date(iso);
+      const now = new Date();
+      const diff = Math.round((now - d) / 60000); // minutes
+      const ago = diff < 1 ? '방금 전'
+                : diff < 60 ? `${diff}분 전`
+                : diff < 1440 ? `${Math.round(diff/60)}시간 전`
+                : `${Math.round(diff/1440)}일 전`;
+      el.textContent = `${d.toLocaleString('ko-KR', { hour12: false })} (${ago})`;
+    } catch (e) {
+      el.textContent = iso;
+    }
+  }
+  async function runNotifyNow(force) {
+    const btn = document.getElementById('run-notify-now');
+    const out = document.getElementById('run-notify-result');
+    const origLabel = btn.textContent;
+    btn.disabled = true; btn.textContent = '⏳ 실행 중...';
+    out.textContent = '';
+    try {
+      const r = await fetch('/api/run-notify/' + (force ? '?force=1' : ''), { method: 'POST' });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      out.textContent = data.output || '(출력 없음 — 아마도 오늘 둘 다 완료해서 스킵)';
+      out.style.color = 'var(--success)';
+      renderLastNotifyRun(data.lastRun);
+    } catch (e) {
+      out.textContent = '❌ ' + (e.message || 'unknown error');
+      out.style.color = 'var(--danger)';
+    } finally {
+      btn.disabled = false; btn.textContent = origLabel;
+    }
+  }
   function computeHoursClient(startH, intervalH, count) {
     const s = Math.max(0, Math.min(23, parseInt(startH, 10) || 0));
     const i = Math.max(1, Math.min(24, parseInt(intervalH, 10) || 1));
@@ -6567,6 +6848,7 @@ Now output ONLY the JSON object:`;
       document.getElementById('set-notify-interval-hours').value = (s.notify_interval_hours != null ? s.notify_interval_hours : 1);
       document.getElementById('set-notify-count').value = (s.notify_count != null ? s.notify_count : 1);
       renderHoursPreview(s.notify_hours_preview);
+      renderLastNotifyRun(s.last_notify_run);
 
       const ntfyHint = document.getElementById('ntfy-topic-hint');
       if (s.ntfy_topic) {
