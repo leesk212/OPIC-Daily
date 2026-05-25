@@ -59,9 +59,24 @@ fi
 mkdir -p data
 URL_FILE="data/tunnel_url.txt"
 TUNNEL_LOG="data/tunnel.log"
-TUNNEL_PID=""
 
-# ===== Cloudflare Quick Tunnel 자동 시작 (있을 때만) =====
+# 기존 cloudflared가 살아있고 URL 파일이 유효하면 그대로 재사용 (URL 안 바뀜).
+# 새로 띄울 땐 nohup + disown으로 셸 종료와 분리 → 다음 ./run.sh가 reuse 가능.
+detect_existing_tunnel() {
+  [ "$NO_TUNNEL" = "1" ] && return 1
+  [ -s "$URL_FILE" ] || return 1
+  command -v cloudflared &> /dev/null || return 1
+  pgrep -f "cloudflared tunnel" > /dev/null 2>&1 || return 1
+  local existing_url
+  existing_url=$(head -1 "$URL_FILE" | tr -d '[:space:]')
+  [ -n "$existing_url" ] || return 1
+  local pid
+  pid=$(pgrep -f 'cloudflared tunnel' | head -1)
+  echo "   ♻️  기존 Tunnel 재사용: $existing_url (PID $pid)"
+  return 0
+}
+
+# ===== Cloudflare Quick Tunnel: reuse or start =====
 start_tunnel() {
   if [ "$NO_TUNNEL" = "1" ]; then
     echo "🌐 NO_TUNNEL=1 — Cloudflare Tunnel 스킵"
@@ -73,19 +88,26 @@ start_tunnel() {
     return
   fi
 
-  echo "🌐 Cloudflare Quick Tunnel 시작..."
+  if detect_existing_tunnel; then
+    return
+  fi
+
+  echo "🌐 Cloudflare Quick Tunnel 새로 시작..."
   rm -f "$URL_FILE"
-  cloudflared tunnel --url "http://localhost:$PORT" --no-autoupdate \
+  # nohup + disown으로 detach → 이 셸이 종료돼도 tunnel은 계속 살아있음
+  nohup cloudflared tunnel --url "http://localhost:$PORT" --no-autoupdate \
     > "$TUNNEL_LOG" 2>&1 &
-  TUNNEL_PID=$!
+  local tpid=$!
+  disown "$tpid" 2>/dev/null || true
 
   # 최대 20초 URL 대기
   for i in $(seq 1 40); do
     if grep -qE 'https://[a-z0-9-]+\.trycloudflare\.com' "$TUNNEL_LOG" 2>/dev/null; then
       URL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$TUNNEL_LOG" | head -1)
       echo "$URL" > "$URL_FILE"
-      echo "   ✅ Tunnel URL: $URL"
+      echo "   ✅ Tunnel URL: $URL (PID $tpid, detached)"
       echo "      → 설정 모달과 알림에 자동 반영됨"
+      echo "      → ./run.sh 재실행 시 같은 URL 재사용 (명시적 종료: pkill -f 'cloudflared tunnel')"
       return
     fi
     sleep 0.5
@@ -93,13 +115,14 @@ start_tunnel() {
   echo "   ⚠️  20초 안에 URL 못 받음 ($TUNNEL_LOG 확인). 서버는 그대로 동작."
 }
 
-# 종료 시 청소
+# Ctrl+C 시 tunnel은 그대로 둠 (detached) → 다음 ./run.sh에서 reuse
 cleanup() {
   echo ""
-  echo "🛑 종료 중..."
-  rm -f "$URL_FILE"
-  if [ -n "$TUNNEL_PID" ]; then
-    kill "$TUNNEL_PID" 2>/dev/null || true
+  if [ -s "$URL_FILE" ] && pgrep -f "cloudflared tunnel" > /dev/null 2>&1; then
+    echo "🛑 Django 서버만 종료. Tunnel은 백그라운드 유지: $(cat "$URL_FILE")"
+    echo "   tunnel도 끄려면: pkill -f 'cloudflared tunnel'"
+  else
+    echo "🛑 종료 중..."
   fi
 }
 trap cleanup EXIT INT TERM
