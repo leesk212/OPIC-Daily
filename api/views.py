@@ -87,14 +87,36 @@ def compute_notify_hours(s: dict) -> list[int]:
 
 
 def _regenerate_crontab() -> None:
-    """Best-effort: write /etc/cron.d/opic-daily from current settings.
-    Silent no-op when not writable (host environment, no cron, etc.).
-    cron daemon picks up changes within ~60 seconds."""
+    """Best-effort crontab refresh after settings change.
+
+    - 컨테이너: write_crontab가 /etc/cron.d/opic-daily 파일을 다시 씀
+      → cron 데몬이 ~60초 안에 자동 인식
+    - 호스트: /etc/cron.d가 없으면 install-cron.sh --quiet 로 호스트
+      user crontab을 갱신 (crontab 명령 사용)
+    둘 다 실패해도 settings 저장은 성공시키기 위해 silent.
+    """
     try:
         from django.core.management import call_command
         call_command('write_crontab', verbosity=0)
     except Exception as e:
-        logger.info(f'crontab regen skipped: {e}')
+        logger.info(f'write_crontab skipped: {e}')
+
+    # 호스트 fallback: /etc/cron.d 못 쓰는 환경이면 user crontab 직접 갱신
+    from pathlib import Path
+    if not Path('/etc/cron.d').exists():
+        try:
+            import subprocess
+            from django.conf import settings as ds
+            script = Path(ds.BASE_DIR) / 'install-cron.sh'
+            if script.is_file():
+                subprocess.run(
+                    [str(script), '--quiet'],
+                    cwd=str(ds.BASE_DIR),
+                    timeout=10,
+                    capture_output=True,
+                )
+        except Exception as e:
+            logger.info(f'host install-cron.sh skipped: {e}')
 
 
 logger = logging.getLogger(__name__)

@@ -34,6 +34,11 @@ python manage.py makemigrations api --noinput
 echo "🗄  DB 마이그레이션..."
 python manage.py migrate --noinput
 
+# ⚙️ 설정에 저장된 알림 스케줄을 호스트 user crontab에 자동 등록 (호스트 cron 없으면 skip)
+if command -v crontab &> /dev/null; then
+  ./install-cron.sh --quiet || true
+fi
+
 # 포트 사용 중이면 자동으로 정리 시도
 if lsof -ti tcp:$PORT > /dev/null 2>&1; then
   echo "⚠️  포트 $PORT 가 이미 사용 중이에요. 기존 프로세스 정리..."
