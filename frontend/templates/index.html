@@ -515,6 +515,182 @@
   }
   .focus-tip-expand:hover { text-decoration: underline; }
 
+  /* ===== Combos Modal (OPIc catalog browser) ===== */
+  .combo-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 600px) {
+    .combo-stats-bar { grid-template-columns: repeat(2, 1fr); }
+  }
+  .combo-stat {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .combo-stat-num {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--opic);
+    line-height: 1.1;
+  }
+  .combo-stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 0.04em;
+  }
+  .combo-filter-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .combo-search {
+    flex: 1;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 13px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-family: inherit;
+  }
+  .combo-search:focus {
+    outline: none;
+    border-color: var(--opic);
+  }
+  .combo-filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-2);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .combo-filter-toggle input { cursor: pointer; }
+  .combo-list {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  .combo-list::-webkit-scrollbar { width: 8px; }
+  .combo-list::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+  .combo-row {
+    background: transparent;
+    border: none;
+    border-left: 3px solid transparent;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    transition: background 0.15s, border-left-color 0.15s;
+  }
+  .combo-row:last-child { border-bottom: none; }
+  .combo-row:hover { background: rgba(255, 255, 255, 0.02); }
+  .combo-row.answered { border-left-color: var(--success); }
+  .combo-row[open] {
+    background: var(--card);
+    border-left-color: var(--opic);
+  }
+  .combo-row > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    user-select: none;
+  }
+  .combo-row > summary::-webkit-details-marker { display: none; }
+  .combo-row > summary::after {
+    content: "▾";
+    color: var(--muted);
+    font-size: 11px;
+    transition: transform 0.15s;
+  }
+  .combo-row[open] > summary::after { transform: rotate(180deg); }
+  .combo-row-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    flex: 1;
+  }
+  .combo-row-id {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    margin-left: 6px;
+  }
+  .combo-row-badges {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .combo-row-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--card);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .combo-row-badge.done {
+    background: var(--success-soft);
+    color: var(--success);
+    border-color: rgba(110, 231, 183, 0.25);
+  }
+  .combo-row-body {
+    padding: 0 16px 14px;
+    border-top: 1px dashed var(--border);
+    margin-top: -1px;
+  }
+  .combo-q {
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .combo-q:last-child { border-bottom: none; }
+  .combo-q-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .combo-q-type {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--opic);
+  }
+  .combo-q-count {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .combo-q-count.done { color: var(--success); font-weight: 600; }
+  .combo-q-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-2);
+  }
+  .combo-list-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
   /* Mini jandi on dashboard */
   .mini-activity {
     margin-bottom: 28px;
@@ -2194,6 +2370,7 @@
     </button>
     <button class="icon-btn" id="open-stats" title="활동 그래프">📊</button>
     <button class="icon-btn" id="open-tips" title="AL 작성 팁">💡</button>
+    <button class="icon-btn" id="open-combos" title="OPIc Combo 카탈로그">📚</button>
     <button class="icon-btn" id="open-settings" title="알림 설정">⚙️</button>
   </div>
 </header>
@@ -2502,6 +2679,47 @@
       <div class="tips-pro" style="margin-top:14px;">
         🎯 <strong>AL = 어려운 영어가 아니라 쉬운 영어를 자연스럽고 논리적으로 오래 말하는 것.</strong> 매 방문마다 팁 1개씩 익혀가요.
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Combos Modal -->
+<div class="modal-overlay" id="combos-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>📚 OPIc Combo 카탈로그</h2>
+      <button class="modal-close" id="combos-close">×</button>
+    </div>
+
+    <div class="combo-stats-bar">
+      <div class="combo-stat">
+        <div class="combo-stat-num" id="combo-total-combos">0</div>
+        <div class="combo-stat-label">전체 combo</div>
+      </div>
+      <div class="combo-stat">
+        <div class="combo-stat-num" id="combo-total-questions">0</div>
+        <div class="combo-stat-label">전체 질문</div>
+      </div>
+      <div class="combo-stat">
+        <div class="combo-stat-num" id="combo-answered-combos">0</div>
+        <div class="combo-stat-label">내가 답한 combo</div>
+      </div>
+      <div class="combo-stat">
+        <div class="combo-stat-num" id="combo-answered-total">0</div>
+        <div class="combo-stat-label">총 답변 수</div>
+      </div>
+    </div>
+
+    <div class="combo-filter-row">
+      <input type="text" class="combo-search" id="combo-search" placeholder="🔎 토픽 검색 (park, music, 가족...)">
+      <label class="combo-filter-toggle">
+        <input type="checkbox" id="combo-show-answered-only">
+        <span>답변한 것만</span>
+      </label>
+    </div>
+
+    <div class="combo-list" id="combo-list">
+      <!-- Rendered by JS -->
     </div>
   </div>
 </div>
@@ -6041,6 +6259,99 @@ Now output ONLY the JSON object:`;
   function closeTipsModal() {
     document.getElementById('tips-modal').classList.remove('show');
   }
+  // ============ Combos modal (OPIc catalog browser) ============
+  let comboStatsCache = null;  // { totalAnswers, combosAnswered, byCombo: {id: {questions:{}, total}} }
+  let comboFilterText = '';
+  let comboShowAnsweredOnly = false;
+
+  async function fetchComboStats() {
+    try {
+      const res = await fetch('/api/opic-combo-stats/');
+      if (!res.ok) throw new Error('stats fetch failed');
+      comboStatsCache = await res.json();
+    } catch (e) {
+      console.warn('combo stats fetch error:', e);
+      comboStatsCache = { totalAnswers: 0, combosAnswered: 0, byCombo: {} };
+    }
+  }
+
+  function renderComboList() {
+    const stats = comboStatsCache || { totalAnswers: 0, combosAnswered: 0, byCombo: {} };
+    document.getElementById('combo-total-combos').textContent = OPIC_COMBOS.length;
+    document.getElementById('combo-total-questions').textContent = OPIC_COMBOS.reduce((s, c) => s + c.questions.length, 0);
+    document.getElementById('combo-answered-combos').textContent = stats.combosAnswered;
+    document.getElementById('combo-answered-total').textContent = stats.totalAnswers;
+
+    const list = document.getElementById('combo-list');
+    const q = comboFilterText.trim().toLowerCase();
+    const filtered = OPIC_COMBOS.filter(c => {
+      const matchesText = !q || c.id.toLowerCase().includes(q) || c.topic.toLowerCase().includes(q);
+      const cs = stats.byCombo[c.id];
+      const matchesAnswered = !comboShowAnsweredOnly || (cs && cs.total > 0);
+      return matchesText && matchesAnswered;
+    });
+
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="combo-list-empty">매칭되는 combo 없음</div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(c => {
+      const cs = stats.byCombo[c.id] || { questions: {}, total: 0 };
+      const answered = cs.total > 0;
+      const questionsHtml = c.questions.map((q, i) => {
+        const cnt = cs.questions[String(i)] || 0;
+        const cntCls = cnt > 0 ? 'combo-q-count done' : 'combo-q-count';
+        return `
+          <div class="combo-q">
+            <div class="combo-q-head">
+              <span class="combo-q-type">Q${i+1} · ${escapeHtml(q.type)}</span>
+              <span class="${cntCls}">${cnt > 0 ? `✓ ${cnt}회` : '아직 안 함'}</span>
+            </div>
+            <div class="combo-q-text">${escapeHtml(q.text)}</div>
+          </div>`;
+      }).join('');
+      return `
+        <details class="combo-row ${answered ? 'answered' : ''}">
+          <summary>
+            <span class="combo-row-title">${escapeHtml(c.topic)}<span class="combo-row-id">${escapeHtml(c.id)}</span></span>
+            <span class="combo-row-badges">
+              <span class="combo-row-badge ${answered ? 'done' : ''}">${answered ? `✓ ${cs.total}회` : '미답변'}</span>
+            </span>
+          </summary>
+          <div class="combo-row-body">${questionsHtml}</div>
+        </details>`;
+    }).join('');
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[m]);
+  }
+
+  async function openCombosModal() {
+    document.getElementById('combos-modal').classList.add('show');
+    await fetchComboStats();
+    renderComboList();
+  }
+  function closeCombosModal() {
+    document.getElementById('combos-modal').classList.remove('show');
+  }
+  document.getElementById('open-combos').addEventListener('click', openCombosModal);
+  document.getElementById('combos-close').addEventListener('click', closeCombosModal);
+  document.getElementById('combos-modal').addEventListener('click', e => {
+    if (e.target.id === 'combos-modal') closeCombosModal();
+  });
+  document.getElementById('combo-search').addEventListener('input', e => {
+    comboFilterText = e.target.value;
+    renderComboList();
+  });
+  document.getElementById('combo-show-answered-only').addEventListener('change', e => {
+    comboShowAnsweredOnly = e.target.checked;
+    renderComboList();
+  });
+
   document.getElementById('open-tips').addEventListener('click', openTipsModal);
   document.getElementById('tips-close').addEventListener('click', closeTipsModal);
   document.getElementById('tips-modal').addEventListener('click', e => {
