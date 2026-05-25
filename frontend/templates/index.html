@@ -454,6 +454,67 @@
   }
   .tip-nav-btn.primary:hover { filter: brightness(1.15); }
 
+  /* ===== Focus Tip (embedded in diary-write / opic-intro) ===== */
+  .focus-tip {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--tip-color);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin: 0 0 18px;
+  }
+  .focus-tip.diary { --tip-color: var(--accent); }
+  .focus-tip.opic  { --tip-color: var(--opic); }
+  .focus-tip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .focus-tip-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--tip-color);
+    text-transform: uppercase;
+  }
+  .focus-tip-reroll {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .focus-tip-reroll:hover {
+    color: var(--tip-color);
+    border-color: var(--tip-color);
+  }
+  .focus-tip-title {
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+  .focus-tip-sub {
+    font-size: 12.5px;
+    color: var(--text-2);
+    margin-bottom: 8px;
+  }
+  .focus-tip-expand {
+    background: transparent;
+    border: none;
+    color: var(--tip-color);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 0;
+    cursor: pointer;
+  }
+  .focus-tip-expand:hover { text-decoration: underline; }
+
   /* Mini jandi on dashboard */
   .mini-activity {
     margin-bottom: 28px;
@@ -2196,6 +2257,16 @@
         <button class="reroll-btn" id="diary-reroll">🎲 다른 주제</button>
       </div>
 
+      <div class="focus-tip diary">
+        <div class="focus-tip-header">
+          <div class="focus-tip-label">💡 오늘 연습할 팁 · <span id="diary-focus-num">1</span>/<span id="diary-focus-total">16</span></div>
+          <button class="focus-tip-reroll" id="diary-focus-reroll" title="다른 팁">🎲 다른 팁</button>
+        </div>
+        <div class="focus-tip-title" id="diary-focus-title"></div>
+        <div class="focus-tip-sub" id="diary-focus-sub"></div>
+        <button class="focus-tip-expand" id="diary-focus-expand">📖 자세히 보기 →</button>
+      </div>
+
       <textarea class="entry-input" id="diary-input"
         placeholder="영어로 자유롭게 적어주세요.&#10;짧아도 괜찮고, 완벽할 필요 없어요.&#10;&#10;5문장 이상 쓰면 친구가 자연스럽게 다듬어줄게요!"></textarea>
 
@@ -2238,6 +2309,16 @@
 
       <!-- Intro state -->
       <div class="opic-intro" id="opic-intro">
+        <div class="focus-tip opic">
+          <div class="focus-tip-header">
+            <div class="focus-tip-label">🎯 오늘 연습할 팁 · <span id="opic-focus-num">1</span>/<span id="opic-focus-total">18</span></div>
+            <button class="focus-tip-reroll" id="opic-focus-reroll" title="다른 팁">🎲 다른 팁</button>
+          </div>
+          <div class="focus-tip-title" id="opic-focus-title"></div>
+          <div class="focus-tip-sub" id="opic-focus-sub"></div>
+          <button class="focus-tip-expand" id="opic-focus-expand">📖 자세히 보기 →</button>
+        </div>
+
         <div class="intro-help">
           오늘의 Combo는 3개 질문이 자동으로 이어집니다.<br>
           • 문제가 자동 재생되고 끝나면 <strong>녹음이 자동 시작</strong>돼요<br>
@@ -5093,7 +5174,7 @@ Now output ONLY the JSON object:`;
     try {
       const fb = await getFeedback(text, { mode: 'diary' });
       const key = todayKey();
-      addEntry(key, {
+      await addEntry(key, {
         id: Date.now(), mode: 'diary', text, feedback: fb,
         completedAt: new Date().toISOString(),
         model: state.preferredModel || 'haiku'
@@ -5105,7 +5186,7 @@ Now output ONLY the JSON object:`;
       hideLoading();
       if (lastRawResponse && lastRawResponse.trim().length > 20) {
         const key = todayKey();
-        addEntry(key, {
+        await addEntry(key, {
           id: Date.now(), mode: 'diary', text, feedback: null,
           rawFeedback: lastRawResponse,
           completedAt: new Date().toISOString(),
@@ -5144,7 +5225,7 @@ Now output ONLY the JSON object:`;
     try {
       const fb = await getFeedback(text, { mode: 'opic', opicQuestion: question });
       const key = todayKey();
-      addEntry(key, {
+      await addEntry(key, {
         id: Date.now(), mode: 'opic', text,
         opicQuestion: question,
         opicCombo: comboId,
@@ -5161,7 +5242,7 @@ Now output ONLY the JSON object:`;
       hideLoading();
       if (lastRawResponse && lastRawResponse.trim().length > 20) {
         const key = todayKey();
-        addEntry(key, {
+        await addEntry(key, {
           id: Date.now(), mode: 'opic', text,
           opicQuestion: question,
           opicCombo: comboId,
@@ -5886,13 +5967,66 @@ Now output ONLY the JSON object:`;
     document.getElementById(`${prefix}-tip-next`).addEventListener('click', next);
     document.getElementById(`${prefix}-tip-random`).addEventListener('click', rand);
 
+    function goTo(i) {
+      idx = ((i % tips.length) + tips.length) % tips.length;
+      render();
+    }
+
     render();
-    return { next, render };
+    return { next, render, goTo };
   }
 
   const diaryCarousel = makeTipCarousel('diary', DIARY_TIPS);
   const opicCarousel  = makeTipCarousel('opic',  OPIC_TIPS);
   let tipsModalOpened = false;
+
+  // ---- Focus tip (embedded in write views — one tip per day, applies one thing at a time) ----
+  function dayOfYearIdx(len) {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const day = Math.floor((now - start) / 86400000);
+    return ((day % len) + len) % len;
+  }
+
+  function makeFocusTip(prefix, tips, carousel) {
+    const elTitle  = document.getElementById(`${prefix}-focus-title`);
+    const elSub    = document.getElementById(`${prefix}-focus-sub`);
+    const elNum    = document.getElementById(`${prefix}-focus-num`);
+    const elTotal  = document.getElementById(`${prefix}-focus-total`);
+    const elReroll = document.getElementById(`${prefix}-focus-reroll`);
+    const elExpand = document.getElementById(`${prefix}-focus-expand`);
+    if (!elTitle || !elSub || !elNum || !elTotal || !elReroll || !elExpand) {
+      console.warn(`makeFocusTip(${prefix}): DOM elements missing — focus-tip card won't render. Try a hard refresh (Cmd+Shift+R).`);
+      return;
+    }
+    let idx = dayOfYearIdx(tips.length);
+    function render() {
+      const t = tips[idx];
+      elTitle.textContent = t.title;
+      elSub.textContent   = t.sub;
+      elNum.textContent   = idx + 1;
+      elTotal.textContent = tips.length;
+    }
+    function reroll() {
+      if (tips.length <= 1) return;
+      let n = idx;
+      while (n === idx) n = Math.floor(Math.random() * tips.length);
+      idx = n; render();
+    }
+    function expandToModal() {
+      document.getElementById('tips-modal').classList.add('show');
+      tipsModalOpened = true;
+      document.querySelectorAll('.tips-tab').forEach(t => t.classList.toggle('active', t.dataset.tipsTab === prefix));
+      document.querySelectorAll('.tips-panel').forEach(p => p.classList.toggle('active', p.id === `tips-panel-${prefix}`));
+      carousel.goTo(idx);
+    }
+    elReroll.addEventListener('click', reroll);
+    elExpand.addEventListener('click', expandToModal);
+    render();
+  }
+
+  makeFocusTip('diary', DIARY_TIPS, diaryCarousel);
+  makeFocusTip('opic',  OPIC_TIPS,  opicCarousel);
 
   function openTipsModal() {
     document.getElementById('tips-modal').classList.add('show');

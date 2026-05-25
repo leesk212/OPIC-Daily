@@ -101,11 +101,49 @@ logger = logging.getLogger(__name__)
 
 
 def index(request):
-    return render(request, 'index.html')
+    resp = render(request, 'index.html')
+    # 메인 페이지는 캐시 금지 — 사용자가 git pull 후 매번 새 HTML 보도록
+    resp['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    resp['Pragma'] = 'no-cache'
+    return resp
 
 
 def health(request):
     return JsonResponse({'status': 'ok'})
+
+
+def opic_combo_stats(request):
+    """Aggregate Entry rows (mode=opic) by combo + question index.
+
+    Returns counts only — the combo catalog itself lives in the frontend
+    (OPIC_COMBOS const). The frontend joins these counts onto its catalog.
+    """
+    from django.db.models import Count
+    rows = (Entry.objects
+            .filter(mode='opic')
+            .values('opic_combo', 'opic_question_index')
+            .annotate(count=Count('id')))
+
+    # { combo_id: { q_index: count, ..., total: N } }
+    out: dict = {}
+    total_answers = 0
+    for r in rows:
+        cid = r['opic_combo']
+        qidx = r['opic_question_index']
+        cnt = r['count']
+        if not cid:
+            continue
+        bucket = out.setdefault(cid, {'questions': {}, 'total': 0})
+        if qidx is not None:
+            bucket['questions'][str(qidx)] = cnt
+        bucket['total'] += cnt
+        total_answers += cnt
+
+    return JsonResponse({
+        'totalAnswers': total_answers,
+        'combosAnswered': len(out),
+        'byCombo': out,
+    })
 
 
 def diagnose(request):
