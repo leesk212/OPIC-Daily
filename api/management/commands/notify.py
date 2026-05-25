@@ -21,7 +21,7 @@ from django.core.management.base import BaseCommand
 
 from api.mailer import send_via_ntfy, MailerError
 from api.models import Entry
-from api.views import get_settings, build_notification_body
+from api.views import get_settings, build_notification_body, build_status_line, resolve_user_label
 
 
 FLAVORS = [
@@ -81,15 +81,8 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('✅ 오늘 둘 다 완료. 알림 안 보냄.'))
             return
 
-        who = f'[{notify_user}] ' if notify_user else ''
-        if has_diary and has_opic:
-            status_line = f'✅ {who}오늘 일기+Opic 둘 다 완료 (강제 알림)'
-        elif has_diary:
-            status_line = f'📝 {who}일기 완료 / 🎤 Opic 미완료'
-        elif has_opic:
-            status_line = f'🎤 {who}Opic 완료 / 📝 일기 미완료'
-        else:
-            status_line = f'☐ {who}일기 + ☐ Opic 둘 다 미완료'
+        user_label = resolve_user_label(notify_user)
+        status_line = build_status_line(user_label, has_diary, has_opic)
 
         title = '🌙 오늘의 영어 시간'
         message = build_notification_body(random.choice(FLAVORS), status_line)

@@ -211,6 +211,28 @@ def pick_random_quote():
         return None
 
 
+def build_status_line(user_label: str, has_diary: bool, has_opic: bool) -> str:
+    """포맷: '오늘자 Danny 일기 ✅, opic ☐' (체크박스로 완료/미완료 표시).
+    user_label은 display_name 우선, 없으면 username, 둘 다 없으면 빈 문자열."""
+    diary_box = '✅' if has_diary else '☐'
+    opic_box = '✅' if has_opic else '☐'
+    who = f' {user_label}' if user_label else ''
+    return f'오늘자{who} 일기 {diary_box}, opic {opic_box}'
+
+
+def resolve_user_label(user_obj_or_username) -> str:
+    """User 객체 → display_name (없으면 username). 문자열이면 그대로. None이면 ''."""
+    if not user_obj_or_username:
+        return ''
+    if isinstance(user_obj_or_username, str):
+        try:
+            u = User.objects.get(username=user_obj_or_username)
+            return u.display_name or u.username
+        except User.DoesNotExist:
+            return user_obj_or_username
+    return user_obj_or_username.display_name or user_obj_or_username.username
+
+
 def build_notification_body(*extra_lines):
     """Append a random expression + random quote to the given body lines.
 
@@ -1592,7 +1614,18 @@ def test_notify(request):
     if custom_message:
         message = custom_message
     else:
-        message = build_notification_body('ntfy 알림이 정상 동작합니다 ✨')
+        # cron과 동일한 포맷: "오늘자 Danny 일기 ☐, opic ☐" + 표현 + 명언
+        from datetime import date
+        me = _current_user(request)
+        today_str = date.today().isoformat()
+        entries = Entry.objects.filter(date=today_str)
+        if me:
+            entries = entries.filter(user=me)
+        has_diary = entries.filter(mode='diary').exists()
+        has_opic = entries.filter(mode='opic').exists()
+        user_label = resolve_user_label(me) if me else ''
+        status_line = build_status_line(user_label, has_diary, has_opic)
+        message = build_notification_body(status_line)
 
     try:
         result = send_via_ntfy(
