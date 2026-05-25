@@ -1517,14 +1517,25 @@ def run_notify(request):
         )
     except Exception:
         force = False
+
+    # 대시보드 테스트는 항상 "지금 로그인된 user 기준"으로 카운트해야 의도와 맞음
+    # (settings.notify_user는 cron 발사용 기본값이지 대시보드 호출과는 별개)
     args = ['notify']
     if force:
         args.append('--force')
+    me = _current_user(request)
+    if me:
+        args.extend(['--user', me.username])
     try:
         call_command(*args, stdout=buf)
         out = buf.getvalue().strip()
         last_run_iso = _notify_log_mtime()
-        return JsonResponse({'status': 'ok', 'output': out, 'lastRun': last_run_iso})
+        return JsonResponse({
+            'status': 'ok',
+            'output': out,
+            'lastRun': last_run_iso,
+            'userScope': me.username if me else None,
+        })
     except Exception as e:
         logger.exception('run_notify failed')
         return JsonResponse({'status': 'error', 'error': f'{type(e).__name__}: {e}'}, status=500)

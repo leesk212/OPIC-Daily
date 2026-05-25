@@ -41,15 +41,22 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--force', action='store_true', help='이미 완료해도 강제 전송')
         parser.add_argument('--dry-run', action='store_true', help='실제 전송 없이 미리보기')
+        parser.add_argument('--user', dest='user_override', default=None,
+                            help='username (override settings.notify_user). '
+                                 '대시보드 "지금 실행" 버튼이 현재 로그인된 user로 호출.')
 
     def handle(self, *args, **options):
         today_str = date.today().isoformat()
         s = get_settings()
-        notify_user = (s.get('notify_user') or '').strip()
+        # --user 인자가 있으면 그게 우선, 없으면 settings.notify_user
+        notify_user = (options.get('user_override')
+                       or s.get('notify_user') or '').strip()
         entries = Entry.objects.filter(date=today_str)
         if notify_user:
             entries = entries.filter(user__username=notify_user)
-            self.stdout.write(f'👤 user 필터: {notify_user}')
+            self.stdout.write(f'👤 user 필터: {notify_user} ({entries.count()}개 entry)')
+        else:
+            self.stdout.write(f'👥 user 필터 없음 (전체 {entries.count()}개 entry 카운트)')
         has_diary = entries.filter(mode='diary').exists()
         has_opic = entries.filter(mode='opic').exists()
 

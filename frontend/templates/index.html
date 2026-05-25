@@ -8687,10 +8687,11 @@ Now output ONLY the JSON object:`;
     btn.disabled = true; btn.textContent = '⏳ 실행 중...';
     out.textContent = '';
     try {
-      const r = await fetch('/api/run-notify/' + (force ? '?force=1' : ''), { method: 'POST' });
+      const r = await authFetch('/api/run-notify/' + (force ? '?force=1' : ''), { method: 'POST' });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
-      out.textContent = data.output || '(출력 없음 — 아마도 오늘 둘 다 완료해서 스킵)';
+      const scope = data.userScope ? `[user 기준: ${data.userScope}]\n` : '[user 필터 없음 — 전체 합산]\n';
+      out.textContent = scope + (data.output || '(출력 없음 — 아마도 오늘 둘 다 완료해서 스킵)');
       out.style.color = 'var(--success)';
       renderLastNotifyRun(data.lastRun);
     } catch (e) {
