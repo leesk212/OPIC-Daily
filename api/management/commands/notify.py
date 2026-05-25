@@ -21,7 +21,7 @@ from django.core.management.base import BaseCommand
 
 from api.mailer import send_via_ntfy, MailerError
 from api.models import Entry
-from api.views import get_settings
+from api.views import get_settings, build_notification_body
 
 
 FLAVORS = [
@@ -81,7 +81,7 @@ class Command(BaseCommand):
             status_line = '☐ 일기 + ☐ Opic 둘 다 미완료'
 
         title = '🌙 오늘의 영어 시간'
-        message = f'{random.choice(FLAVORS)}\n{status_line}'
+        message = build_notification_body(random.choice(FLAVORS), status_line)
 
         if options['dry_run']:
             self.stdout.write('=== DRY RUN ===')

@@ -11,6 +11,7 @@ class User(models.Model):
     """
     username = models.CharField(max_length=64, unique=True, db_index=True)
     display_name = models.CharField(max_length=128, blank=True, default='')
+    preferences = models.JSONField(default=dict, blank=True)  # per-user prefs: opic_selected_topics, etc.
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -28,6 +29,36 @@ class User(models.Model):
         if entries_count is not None:
             out['entriesCount'] = entries_count
         return out
+
+
+class Expression(models.Model):
+    """Conversational English expression curated from the Notion DB.
+
+    Shown on the dashboard as "오늘의 영어 회화 표현" — random one per visit,
+    click to expand Korean meaning + example + tip + category.
+    """
+    en = models.CharField(max_length=200, unique=True)
+    ko = models.CharField(max_length=300)
+    example = models.TextField(blank=True, default='')
+    tip = models.TextField(blank=True, default='')
+    category = models.CharField(max_length=50, blank=True, default='', db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['id']
+
+    def __str__(self):
+        return self.en
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'en': self.en,
+            'ko': self.ko,
+            'example': self.example,
+            'tip': self.tip,
+            'category': self.category,
+        }
 
 
 class Entry(models.Model):

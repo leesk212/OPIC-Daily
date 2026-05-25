@@ -46,6 +46,7 @@
     max-width: 760px;
     margin: 0 auto;
   }
+  .app-header[hidden] { display: none !important; }
   .brand {
     font-size: 14px;
     font-weight: 600;
@@ -118,13 +119,19 @@
   }
 
   /* ===== Login view ===== */
-  .view-login {
-    min-height: 80vh;
+  /* Fixed overlay so it truly centers in the viewport regardless of .app-main constraints.
+     Selector intentionally uses both classes to beat the later `.view { display: block }` rule. */
+  .view.view-login {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: var(--bg);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 32px 20px;
+    padding: 24px 20px;
   }
+  .view.view-login[hidden] { display: none !important; }
   .login-card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -168,20 +175,385 @@
   .login-card .cta-submit {
     margin-top: 4px;
   }
-  .login-admin-link {
-    background: transparent;
-    border: none;
-    color: var(--muted);
-    font-size: 12.5px;
-    padding: 8px;
-    cursor: pointer;
-    margin-top: 4px;
-  }
-  .login-admin-link:hover { color: var(--text-2); text-decoration: underline; }
   .login-help {
     font-size: 11.5px;
     color: var(--muted);
     margin-top: 6px;
+  }
+
+  /* ===== Admin page (sidebar + content) ===== */
+  /* Escape .app-main's 720px constraint so admin can use the full viewport width. */
+  .view.view-admin {
+    position: fixed;
+    inset: 0;
+    overflow-y: auto;
+    background: var(--bg);
+    z-index: 30;
+    padding: 0;
+  }
+  .view.view-admin[hidden] { display: none !important; }
+  .admin-shell {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 32px;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 24px 32px 60px;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+  @media (max-width: 900px) {
+    .admin-shell { grid-template-columns: 200px 1fr; gap: 20px; padding: 18px 18px 40px; }
+  }
+  @media (max-width: 760px) {
+    .admin-shell { grid-template-columns: 1fr; gap: 14px; padding: 14px 14px 40px; }
+  }
+  .admin-sidebar {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    height: fit-content;
+    position: sticky;
+    top: 20px;
+  }
+  @media (max-width: 760px) {
+    .admin-sidebar { position: static; }
+  }
+  .admin-sidebar-brand {
+    padding: 6px 10px 14px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 6px;
+  }
+  .admin-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .admin-nav-item {
+    background: transparent;
+    border: none;
+    color: var(--text-2);
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.12s, color 0.12s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .admin-nav-item:hover {
+    background: var(--card-2);
+    color: var(--text);
+  }
+  .admin-nav-item.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .admin-nav-count {
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--card-2);
+    padding: 1px 7px;
+    border-radius: 999px;
+  }
+  .admin-nav-item.active .admin-nav-count {
+    background: rgba(245, 158, 11, 0.18);
+    color: var(--accent);
+  }
+  .admin-sidebar-exit {
+    margin-top: 12px;
+    padding: 9px 12px;
+    font-size: 12.5px;
+  }
+  .admin-content {
+    min-width: 0;
+  }
+  .admin-section-panel { display: block; }
+  .admin-section-panel[hidden] { display: none; }
+  .admin-section-title {
+    margin: 0 0 18px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .admin-cat-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 0 0 4px;
+  }
+  .admin-cat-chip {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: 11.5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.12s;
+    font-family: inherit;
+  }
+  .admin-cat-chip:hover { color: var(--text); border-color: var(--muted); }
+  .admin-cat-chip.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .admin-cat-chip .admin-cat-chip-count {
+    opacity: 0.7;
+    font-weight: 400;
+    margin-left: 3px;
+  }
+  .admin-added-list {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--success);
+    border-radius: 8px;
+    overflow: hidden;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .admin-added-list .lib-row {
+    border-bottom: 1px solid var(--border);
+  }
+  .admin-added-list .lib-row:last-child { border-bottom: none; }
+  .adm-new-badge {
+    display: inline-block;
+    background: var(--success-soft);
+    color: var(--success);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 999px;
+    margin-left: 6px;
+    vertical-align: middle;
+    letter-spacing: 0.04em;
+  }
+  .lib-row.is-new { background: rgba(110, 231, 183, 0.04); }
+  /* admin's bigger expression list (no max-height since it scrolls inside page) */
+  #adm-expr-list, #adm-quote-list, #adm-combo-list {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  /* (legacy single-column admin styles — kept for backwards compat with .admin-page elsewhere) */
+  .admin-page { max-width: 760px; margin: 0 auto; padding: 8px 0 40px; }
+  .admin-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 24px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .admin-page-eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .admin-page-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .admin-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 16px;
+  }
+  .admin-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .admin-card-sub {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    line-height: 1.55;
+  }
+  .admin-fetch-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .admin-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .admin-field input, .admin-field select {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-family: inherit;
+    text-transform: none;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+  .admin-fetch-row .cta-submit {
+    margin: 0 0 0 auto;
+    padding: 10px 18px;
+    font-size: 13.5px;
+    white-space: nowrap;
+  }
+  .admin-result {
+    margin-top: 14px;
+    background: var(--card-2);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.6;
+    border-left: 3px solid var(--success);
+  }
+  .admin-result.is-error { border-left-color: var(--danger); }
+  .admin-result strong { color: var(--text); }
+  .admin-source-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .admin-source-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    font-family: inherit;
+  }
+  .admin-source-tab:hover { color: var(--text-2); }
+  .admin-source-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .admin-source-panel input[type="url"],
+  .admin-source-panel input[type="file"] {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .admin-extract-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  /* (legacy modal-era admin-section — kept harmless for any stray usage) */
+  .admin-section {
+    margin-bottom: 22px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .admin-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+  .admin-create-row {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr auto;
+    gap: 8px;
+    align-items: center;
+  }
+  @media (max-width: 600px) {
+    .admin-create-row { grid-template-columns: 1fr; }
+  }
+  .admin-create-row .login-input { margin: 0; padding: 10px 12px; font-size: 13.5px; }
+  .admin-create-row .cta-submit { margin: 0; padding: 10px 16px; font-size: 13.5px; white-space: nowrap; }
+  .admin-user-list {
+    display: flex;
+    flex-direction: column;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+  .admin-user-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .admin-user-row:last-child { border-bottom: none; }
+  .admin-user-name {
+    font-weight: 600;
+    color: var(--text);
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 13.5px;
+  }
+  .admin-user-display {
+    font-size: 12.5px;
+    color: var(--text-2);
+  }
+  .admin-user-meta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: auto;
+    margin-right: 8px;
+    text-align: right;
+    line-height: 1.4;
+  }
+  .admin-user-meta strong {
+    color: var(--opic);
+    font-variant-numeric: tabular-nums;
+  }
+  .admin-user-del {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .admin-user-del:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+  .admin-user-empty {
+    padding: 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
   }
 
   /* ===== Main ===== */
@@ -245,6 +617,190 @@
     color: var(--success);
   }
   .dash-progress .prog-sep { color: var(--border); }
+
+  /* ===== Today's English expression — single-line minimal ===== */
+  .expression-row {
+    display: block;
+    margin: 4px 0 14px;
+  }
+  .expression-line {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    padding: 4px 0;
+    margin: 6px 0 2px;
+    cursor: pointer;
+    color: inherit;
+    font-family: inherit;
+    text-align: left;
+    line-height: 1.5;
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+  .expression-line:hover .expression-line-en,
+  .expression-line:hover .expression-line-ko { color: var(--accent); }
+  .expression-line-icon { font-size: 13px; opacity: 0.85; }
+  .expression-line-en {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    transition: color 0.15s;
+  }
+  .expression-line-sep { color: var(--muted); font-size: 12px; }
+  .expression-line-ko {
+    font-size: 13px;
+    color: var(--text-2);
+    transition: color 0.15s;
+  }
+
+  /* ===== Expression detail modal ===== */
+  .expr-modal-en {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 4px 0 6px;
+    line-height: 1.3;
+  }
+  .expr-modal-ko {
+    font-size: 15px;
+    color: var(--text);
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .expr-modal-section {
+    margin-bottom: 14px;
+  }
+  .expr-modal-section:last-child { margin-bottom: 0; }
+  .expr-modal-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .expr-modal-example {
+    background: var(--card-2);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text);
+    font-style: italic;
+  }
+  .expr-modal-tip {
+    background: var(--card-2);
+    border-left: 3px solid var(--opic);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--text-2);
+  }
+  .expr-modal-category {
+    display: inline-block;
+    background: var(--accent-soft);
+    color: var(--accent);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .expr-modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 18px;
+  }
+  .expr-modal-actions .ghost-btn { flex: 1; padding: 10px; font-size: 13px; }
+
+  /* ===== Library modal (expressions + quotes) ===== */
+  .lib-panel { display: block; }
+  .lib-panel[hidden] { display: none; }
+  .lib-panel .combo-search { width: 100%; margin-bottom: 10px; }
+  .lib-category-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+  .lib-cat-chip {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .lib-cat-chip:hover { color: var(--text); border-color: var(--muted); }
+  .lib-cat-chip.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .lib-list {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    max-height: 55vh;
+    overflow-y: auto;
+  }
+  .lib-list::-webkit-scrollbar { width: 8px; }
+  .lib-list::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+  .lib-row {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .lib-row:last-child { border-bottom: none; }
+  .lib-row:hover { background: rgba(255, 255, 255, 0.03); }
+  .lib-row-en {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .lib-row-ko {
+    font-size: 12.5px;
+    color: var(--text-2);
+  }
+  .lib-row-cat {
+    display: inline-block;
+    font-size: 10.5px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 1px 7px;
+    border-radius: 999px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .lib-row-quote {
+    font-style: italic;
+    color: var(--text);
+    font-size: 13.5px;
+    line-height: 1.45;
+  }
+  .lib-row-author {
+    font-style: normal;
+    color: var(--muted);
+    font-size: 11.5px;
+    margin-top: 3px;
+  }
+  .lib-empty {
+    padding: 32px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
   .dash-cards {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -2440,7 +2996,34 @@
   }
 
   @media (max-width: 600px) {
-    .app-header { padding: 12px 16px; }
+    .app-header {
+      padding: 10px 12px;
+      gap: 6px;
+      flex-wrap: nowrap;
+    }
+    .brand { font-size: 13px; flex-shrink: 0; }
+    .header-actions {
+      gap: 4px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .header-actions::-webkit-scrollbar { display: none; }
+    .icon-btn {
+      width: 30px;
+      height: 30px;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .user-chip {
+      max-width: 80px;
+      padding: 4px 8px;
+      font-size: 11.5px;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .streak-chip { padding: 4px 9px; font-size: 11.5px; gap: 3px; flex-shrink: 0; }
+    .streak-chip .chip-label { display: none; }
     .app-main { padding: 24px 16px 60px; }
     .prompt-text { font-size: 19px; }
     .entry-input { min-height: 260px; padding: 16px 18px; font-size: 15px; }
@@ -2463,6 +3046,7 @@
     <button class="icon-btn" id="open-stats" title="활동 그래프">📊</button>
     <button class="icon-btn" id="open-tips" title="AL 작성 팁">💡</button>
     <button class="icon-btn" id="open-combos" title="OPIc Combo 카탈로그">📚</button>
+    <button class="icon-btn" id="open-library" title="표현 & 명언 카탈로그">📖</button>
     <button class="icon-btn" id="open-settings" title="알림 설정">⚙️</button>
     <button class="icon-btn" id="logout-btn" title="로그아웃">🚪</button>
   </div>
@@ -2480,9 +3064,8 @@
       <div class="error-box" id="login-error" hidden></div>
 
       <input type="text" class="login-input" id="login-username" placeholder="ID 입력" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <input type="password" class="login-input" id="login-admin-pw" placeholder="🔐 관리자 비밀번호" autocomplete="current-password" hidden>
       <button class="cta-submit" id="login-submit">로그인 →</button>
-
-      <button class="login-admin-link" id="login-admin-link">🔐 관리자 로그인</button>
 
       <div class="login-help">ID가 없으신가요? 관리자에게 발급받으세요.</div>
     </div>
@@ -2494,6 +3077,16 @@
       <div class="dash-date" id="dash-date"></div>
       <div class="dash-title">오늘의 영어</div>
       <div class="dash-quote" id="dash-quote"></div>
+
+      <div class="expression-row">
+        <button class="expression-line" id="expression-card" title="눌러서 의미·예문·팁 보기">
+          <span class="expression-line-icon">💬</span>
+          <span class="expression-line-en" id="expression-en">…</span>
+          <span class="expression-line-sep">—</span>
+          <span class="expression-line-ko" id="expression-ko"></span>
+        </button>
+      </div>
+
       <div class="dash-progress" id="dash-progress">
         <span class="prog-item" id="prog-diary">☐ 일기</span>
         <span class="prog-sep">·</span>
@@ -2681,6 +3274,216 @@
     </div>
   </section>
 
+  <!-- ============ ADMIN PAGE (sidebar layout) ============ -->
+  <section class="view view-admin" id="view-admin" hidden>
+    <div class="admin-shell">
+      <aside class="admin-sidebar">
+        <div class="admin-sidebar-brand">
+          <div class="admin-page-eyebrow">🔐 ADMIN</div>
+          <div class="admin-page-title">관리자</div>
+        </div>
+        <nav class="admin-nav">
+          <button class="admin-nav-item active" data-admin-section="users">👥 사용자</button>
+          <button class="admin-nav-item" data-admin-section="ai-fetch">🤖 AI 생성</button>
+          <button class="admin-nav-item" data-admin-section="extract">📎 자료 추출</button>
+          <button class="admin-nav-item" data-admin-section="expressions">💬 표현 <span class="admin-nav-count" id="adm-count-expr">…</span></button>
+          <button class="admin-nav-item" data-admin-section="quotes">📜 명언 <span class="admin-nav-count" id="adm-count-quote">…</span></button>
+          <button class="admin-nav-item" data-admin-section="combos">📚 콤보 <span class="admin-nav-count" id="adm-count-combo">…</span></button>
+        </nav>
+        <button class="ghost-btn admin-sidebar-exit" id="admin-logout-btn">🚪 로그아웃</button>
+      </aside>
+
+      <main class="admin-content">
+
+        <!-- ===== Users ===== -->
+        <div class="admin-section-panel active" data-admin-panel="users">
+          <h2 class="admin-section-title">👥 사용자 관리</h2>
+
+          <div class="admin-card">
+            <div class="admin-card-title">➕ 새 사용자 ID 발급</div>
+            <div class="error-box" id="admin-create-error" hidden></div>
+            <div class="admin-create-row">
+              <input type="text" class="login-input" id="admin-new-username" placeholder="username (영문/숫자/_.-, 2~64자)" autocapitalize="none" autocorrect="off" spellcheck="false" style="text-align:left;">
+              <input type="text" class="login-input" id="admin-new-displayname" placeholder="표시 이름 (선택)" style="text-align:left;">
+              <button class="cta-submit" id="admin-create-submit">발급</button>
+            </div>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-title">📋 사용자 목록 · <span id="admin-user-count">0</span>명</div>
+            <div class="admin-user-list" id="admin-user-list"></div>
+          </div>
+        </div>
+
+        <!-- ===== AI Fetch (expressions / quotes / combos) ===== -->
+        <div class="admin-section-panel" data-admin-panel="ai-fetch" hidden>
+          <h2 class="admin-section-title">🤖 AI로 더 만들기</h2>
+
+          <div class="admin-card">
+            <div class="admin-source-tabs" style="margin-bottom:14px;">
+              <button class="admin-source-tab active" data-fetch-type="expressions">💬 표현</button>
+              <button class="admin-source-tab" data-fetch-type="quotes">📜 명언</button>
+              <button class="admin-source-tab" data-fetch-type="combos">📚 콤보</button>
+              <button class="admin-source-tab" data-fetch-type="enrich">✨ 보강</button>
+            </div>
+
+            <!-- Expressions panel -->
+            <div class="admin-fetch-panel" data-fetch-panel="expressions">
+              <div class="admin-card-sub">현재 표현 총 <strong id="admin-expr-total">…</strong>개. 카테고리를 선택해서 집중 생성하거나, 비워두면 골고루 생성합니다.</div>
+              <div class="section-label" style="margin: 10px 0 6px;">🏷 카테고리 (다중 선택)</div>
+              <div class="admin-cat-bar" id="admin-fetch-cat-bar"></div>
+            </div>
+
+            <!-- Quotes panel -->
+            <div class="admin-fetch-panel" data-fetch-panel="quotes" hidden>
+              <div class="admin-card-sub">현재 명언 총 <strong id="admin-quote-total">…</strong>개. 짧은 동기부여 명언을 생성합니다.</div>
+            </div>
+
+            <!-- Combos panel -->
+            <div class="admin-fetch-panel" data-fetch-panel="combos" hidden>
+              <div class="admin-card-sub">현재 콤보 총 <strong id="admin-combo-total">…</strong>개. 새 OPIc 콤보 (1주제 × 3질문)를 생성합니다.</div>
+              <div class="section-label" style="margin: 10px 0 6px;">🎯 주제 힌트 (선택, 비워두면 자유)</div>
+              <input type="text" class="login-input" id="admin-combo-topic-hint" placeholder="예: winter activities, technology trends, hobbies" style="text-align:left;">
+            </div>
+
+            <!-- Enrich panel -->
+            <div class="admin-fetch-panel" data-fetch-panel="enrich" hidden>
+              <div class="admin-card-sub">기존 표현의 <strong>빈 팁을 채우고 예문을 개선</strong>합니다. 배치(20개)씩 처리 — 자동 모드는 끝날 때까지 반복 호출.</div>
+              <div class="admin-card-sub" style="margin-top:8px;">📊 빈 팁: <strong id="admin-enrich-missing">…</strong> / 전체: <strong id="admin-enrich-total">…</strong></div>
+              <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                <label class="admin-field">
+                  <span>모드</span>
+                  <select id="admin-enrich-mode">
+                    <option value="missing-tips" selected>팁 비어있는 것만</option>
+                    <option value="all">전체 (모든 표현)</option>
+                  </select>
+                </label>
+                <label class="admin-field">
+                  <span>배치 크기</span>
+                  <input type="number" id="admin-enrich-batch" value="20" min="5" max="40" step="5">
+                </label>
+                <label class="admin-field" style="display:flex; flex-direction:row; align-items:center; gap:6px; text-transform:none; letter-spacing:0; font-weight:500; color:var(--text-2);">
+                  <input type="checkbox" id="admin-enrich-auto">
+                  <span style="font-size:13px;">자동 반복 (끝까지)</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="error-box" id="admin-fetch-error" hidden style="margin-top:14px;"></div>
+            <div class="admin-fetch-row" style="margin-top:14px;">
+              <label class="admin-field">
+                <span>개수</span>
+                <input type="number" id="admin-fetch-count" value="20" min="1" max="60" step="5">
+              </label>
+              <label class="admin-field">
+                <span>모델</span>
+                <select id="admin-fetch-model">
+                  <option value="haiku">Haiku · 빠름</option>
+                  <option value="sonnet" selected>Sonnet · 균형</option>
+                  <option value="opus">Opus · 최고</option>
+                </select>
+              </label>
+              <button class="cta-submit" id="admin-fetch-submit">🤖 생성 시작</button>
+            </div>
+            <div class="admin-result" id="admin-fetch-result" hidden></div>
+          </div>
+
+          <div class="admin-card" id="admin-fetch-added-card" hidden>
+            <div class="admin-card-title">✨ 방금 추가됨 (<span id="admin-fetch-added-count">0</span>개)</div>
+            <div class="admin-added-list" id="admin-fetch-added-list"></div>
+            <button class="ghost-btn" id="admin-fetch-go-section" style="margin-top:10px;">→ 카탈로그에서 보기</button>
+          </div>
+        </div>
+
+        <!-- ===== Source Extract ===== -->
+        <div class="admin-section-panel" data-admin-panel="extract" hidden>
+          <h2 class="admin-section-title">📎 자료에서 표현 추출</h2>
+
+          <div class="admin-card">
+            <div class="admin-card-sub">URL · 텍스트 · 파일(.txt/.md/.pdf)에서 AI가 좋은 영어 표현만 골라 DB에 추가합니다.<br>🎬 <strong>YouTube</strong> 링크는 자막 자동 추출, 📷 <strong>Instagram</strong> 링크는 캡션(og:meta)으로.</div>
+
+            <div class="admin-source-tabs">
+              <button class="admin-source-tab active" data-src-tab="url">🔗 URL</button>
+              <button class="admin-source-tab" data-src-tab="text">📝 텍스트</button>
+              <button class="admin-source-tab" data-src-tab="file">📁 파일</button>
+            </div>
+
+            <div class="error-box" id="admin-extract-error" hidden></div>
+
+            <div class="admin-source-panel" data-src-panel="url">
+              <input type="url" class="login-input" id="admin-extract-url" placeholder="https://… (일반 페이지 / YouTube / Instagram)" style="text-align:left;">
+            </div>
+            <div class="admin-source-panel" data-src-panel="text" hidden>
+              <textarea class="admin-extract-textarea" id="admin-extract-text" placeholder="추출할 영어 본문을 여기에 붙여넣기 (최대 30,000자)" rows="8"></textarea>
+            </div>
+            <div class="admin-source-panel" data-src-panel="file" hidden>
+              <input type="file" id="admin-extract-file" accept=".txt,.md,.markdown,.pdf">
+              <div class="admin-card-sub" style="margin-top:6px;">지원: .txt · .md · .pdf (최대 10MB)</div>
+            </div>
+
+            <div class="section-label" style="margin: 14px 0 6px;">🏷 카테고리 (다중 선택 — 비워두면 자동 분류)</div>
+            <div class="admin-cat-bar" id="admin-extract-cat-bar"></div>
+
+            <div class="admin-fetch-row" style="margin-top:14px;">
+              <label class="admin-field">
+                <span>개수</span>
+                <input type="number" id="admin-extract-count" value="20" min="5" max="60" step="5">
+              </label>
+              <label class="admin-field">
+                <span>모델</span>
+                <select id="admin-extract-model">
+                  <option value="haiku">Haiku · 빠름</option>
+                  <option value="sonnet" selected>Sonnet · 균형</option>
+                  <option value="opus">Opus · 최고</option>
+                </select>
+              </label>
+              <button class="cta-submit" id="admin-extract-submit">📎 추출 시작</button>
+            </div>
+            <div class="admin-result" id="admin-extract-result" hidden></div>
+          </div>
+
+          <div class="admin-card" id="admin-extract-added-card" hidden>
+            <div class="admin-card-title">✨ 방금 추가됨 (<span id="admin-extract-added-count">0</span>개)</div>
+            <div class="admin-added-list" id="admin-extract-added-list"></div>
+            <button class="ghost-btn" id="admin-extract-go-expressions" style="margin-top:10px;">💬 전체 표현에서 보기 →</button>
+          </div>
+        </div>
+
+        <!-- ===== Expressions catalog ===== -->
+        <div class="admin-section-panel" data-admin-panel="expressions" hidden>
+          <h2 class="admin-section-title">💬 표현 카탈로그</h2>
+          <div class="admin-card">
+            <div class="admin-card-sub">총 <strong id="adm-expr-total">0</strong>개 · 최근 AI 추가는 <span class="adm-new-badge">NEW</span> 배지로 표시.</div>
+            <input type="text" class="combo-search" id="adm-expr-search" placeholder="🔎 검색 (영어·한국어·카테고리·팁)">
+            <div class="admin-cat-bar" id="adm-expr-cat-bar"></div>
+            <div class="lib-list" id="adm-expr-list" style="max-height:none;"></div>
+          </div>
+        </div>
+
+        <!-- ===== Quotes catalog ===== -->
+        <div class="admin-section-panel" data-admin-panel="quotes" hidden>
+          <h2 class="admin-section-title">📜 명언 카탈로그</h2>
+          <div class="admin-card">
+            <div class="admin-card-sub">총 <strong id="adm-quote-total">0</strong>개 · <code>data/quotes.json</code> 기반.</div>
+            <input type="text" class="combo-search" id="adm-quote-search" placeholder="🔎 검색 (text·author)">
+            <div class="lib-list" id="adm-quote-list" style="max-height:none;"></div>
+          </div>
+        </div>
+
+        <!-- ===== Combos catalog ===== -->
+        <div class="admin-section-panel" data-admin-panel="combos" hidden>
+          <h2 class="admin-section-title">📚 콤보 카탈로그</h2>
+          <div class="admin-card">
+            <div class="admin-card-sub">총 <strong id="adm-combo-total">0</strong>개 · 콤보 1개 = 질문 3개. 펼쳐서 질문 확인.</div>
+            <input type="text" class="combo-search" id="adm-combo-search" placeholder="🔎 검색 (id·토픽명)">
+            <div class="combo-list" id="adm-combo-list" style="max-height:none;"></div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </section>
+
 </main>
 
 <!-- Stats Modal -->
@@ -2793,6 +3596,63 @@
     </div>
   </div>
 </div>
+
+<!-- Library Modal (expressions + quotes) -->
+<div class="modal-overlay" id="library-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>📖 표현 & 명언 카탈로그</h2>
+      <button class="modal-close" id="library-close">×</button>
+    </div>
+
+    <div class="tips-tabs">
+      <button class="tips-tab diary active" data-lib-tab="expressions">💬 표현 <span id="lib-expr-count">0</span></button>
+      <button class="tips-tab opic" data-lib-tab="quotes">📜 명언 <span id="lib-quote-count">0</span></button>
+    </div>
+
+    <div class="lib-panel" id="lib-panel-expressions">
+      <input type="text" class="combo-search" id="lib-expr-search" placeholder="🔎 검색 (영어·한국어·카테고리)">
+      <div class="lib-category-bar" id="lib-category-bar"></div>
+      <div class="lib-list" id="lib-expr-list"></div>
+    </div>
+
+    <div class="lib-panel" id="lib-panel-quotes" hidden>
+      <input type="text" class="combo-search" id="lib-quote-search" placeholder="🔎 검색 (text·author)">
+      <div class="lib-list" id="lib-quote-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Expression Detail Modal -->
+<div class="modal-overlay" id="expression-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>💬 영어 회화 표현</h2>
+      <button class="modal-close" id="expression-close">×</button>
+    </div>
+    <div id="expression-modal-body">
+      <div class="expr-modal-en" id="em-en">…</div>
+      <div class="expr-modal-ko" id="em-ko"></div>
+      <div class="expr-modal-section" id="em-example-wrap" hidden>
+        <div class="expr-modal-section-label">📝 예문</div>
+        <div class="expr-modal-example" id="em-example"></div>
+      </div>
+      <div class="expr-modal-section" id="em-tip-wrap" hidden>
+        <div class="expr-modal-section-label">💡 사용 팁</div>
+        <div class="expr-modal-tip" id="em-tip"></div>
+      </div>
+      <div class="expr-modal-section" id="em-category-wrap" hidden>
+        <div class="expr-modal-section-label">🏷 카테고리</div>
+        <span class="expr-modal-category" id="em-category"></span>
+      </div>
+      <div class="expr-modal-actions">
+        <button class="ghost-btn" id="em-another">🎲 다른 표현 보기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Admin Modal -->
 
 <!-- Combos Modal -->
 <div class="modal-overlay" id="combos-modal">
@@ -2939,21 +3799,32 @@
 (function() {
   'use strict';
 
-  // ============ Storage ============
-  const STORAGE_KEY = 'english-diary-v1';
-  function loadData() {
+  // ============ Storage (namespaced per user) ============
+  const STORAGE_KEY_BASE = 'english-diary-v1';
+  // Drop the legacy unnamespaced key once — its data shared state across all accounts.
+  try { localStorage.removeItem(STORAGE_KEY_BASE); } catch (e) {}
+
+  function storageKey() {
+    return (typeof currentUser !== 'undefined' && currentUser)
+      ? `${STORAGE_KEY_BASE}::${currentUser.username}`
+      : null;
+  }
+  function loadDataForUser() {
+    const key = storageKey();
+    if (!key) return { entries: {} };
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { entries: {} };
-      return JSON.parse(raw);
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : { entries: {} };
     } catch (e) { return { entries: {} }; }
   }
   function saveData(data) {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+    const key = storageKey();
+    if (!key) return;  // no-op when nobody logged in
+    try { localStorage.setItem(key, JSON.stringify(data)); }
     catch (e) { console.error('Save failed', e); }
   }
-  let state = loadData();
-  if (!state.entries) state.entries = {};
+  // Start empty; real state gets swapped in after login.
+  let state = { entries: {} };
 
   // ============ Auth state ============
   const AUTH_STORAGE_KEY = 'opic-current-user';
@@ -2997,7 +3868,7 @@
   function showLoginView() {
     document.getElementById('app-header').hidden = true;
     document.getElementById('view-login').hidden = false;
-    for (const id of ['view-home','view-diary-write','view-opic','view-feedback']) {
+    for (const id of ['view-home','view-diary-write','view-opic','view-feedback','view-admin']) {
       const el = document.getElementById(id);
       if (el) el.hidden = true;
     }
@@ -3014,28 +3885,11 @@
     currentUser = null;
     adminPassword = null;
     setStoredUser(null);
-    // wipe per-user local cache so next user doesn't see stale entries
-    state.entries = {};
-    saveData(state);
+    // Reset in-memory state. Note: this user's localStorage namespace stays —
+    // re-logging in as the same user restores their cached prompts/sessions.
+    state = { entries: {} };
     showLoginView();
   }
-
-  // Migration: single -> array
-  (function migrate() {
-    let changed = false;
-    for (const key of Object.keys(state.entries)) {
-      const v = state.entries[key];
-      if (!Array.isArray(v) && v && typeof v === 'object') {
-        // Old entry: assume diary mode if no mode field
-        if (!v.mode) v.mode = 'diary';
-        state.entries[key] = [v];
-        changed = true;
-      } else if (Array.isArray(v)) {
-        v.forEach(e => { if (!e.mode) e.mode = 'diary'; });
-      }
-    }
-    if (changed) saveData(state);
-  })();
 
   // ============ Entry helpers ============
   function getEntriesForDate(key) {
@@ -3139,8 +3993,9 @@
     return c;
   }
 
-  // ============ Daily English quotes (motivational) ============
+  // ============ English quotes (motivational) — random per visit ============
   const DAILY_QUOTES = [
+    // Language learning
     { text: "Practice makes progress, not perfect.", author: null },
     { text: "The expert in anything was once a beginner.", author: "Helen Hayes" },
     { text: "Don't be afraid to make mistakes — that's how you learn.", author: null },
@@ -3175,19 +4030,158 @@
     { text: "One day or day one. You decide.", author: null },
     { text: "Mistakes are proof that you are trying.", author: null },
     { text: "Small daily improvements are the key to staggering long-term results.", author: null },
-    { text: "Be patient with yourself. Growth takes time.", author: null }
+    { text: "Be patient with yourself. Growth takes time.", author: null },
+    // Growth + persistence
+    { text: "Discipline is choosing between what you want now and what you want most.", author: "Abraham Lincoln" },
+    { text: "Do something today that your future self will thank you for.", author: "Sean Patrick Flanery" },
+    { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+    { text: "Success is the sum of small efforts, repeated day in and day out.", author: "Robert Collier" },
+    { text: "We are what we repeatedly do. Excellence, then, is not an act but a habit.", author: "Will Durant" },
+    { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+    { text: "You don't have to see the whole staircase, just take the first step.", author: "Martin Luther King Jr." },
+    { text: "What you get by achieving your goals is not as important as what you become.", author: "Henry David Thoreau" },
+    { text: "Action is the foundational key to all success.", author: "Pablo Picasso" },
+    { text: "If you want to lift yourself up, lift up someone else.", author: "Booker T. Washington" },
+    { text: "The man who moves a mountain begins by carrying away small stones.", author: "Confucius" },
+    { text: "Fall seven times, stand up eight.", author: "Japanese Proverb" },
+    { text: "The journey of a thousand miles begins with a single step.", author: "Lao Tzu" },
+    { text: "Be so good they can't ignore you.", author: "Steve Martin" },
+    { text: "What we fear of doing most is usually what we most need to do.", author: "Ralph Waldo Emerson" },
+    { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+    { text: "The cave you fear to enter holds the treasure you seek.", author: "Joseph Campbell" },
+    { text: "Energy and persistence conquer all things.", author: "Benjamin Franklin" },
+    { text: "Whether you think you can or think you can't, you're right.", author: "Henry Ford" },
+    { text: "Hard work beats talent when talent doesn't work hard.", author: "Tim Notke" },
+    // Speaking + confidence
+    { text: "Words are free. It's how you use them that may cost you.", author: "KushandWizdom" },
+    { text: "Your voice matters. Speak up.", author: null },
+    { text: "Better an oops than a what if.", author: null },
+    { text: "Spoken English is built outside your comfort zone.", author: null },
+    { text: "If you wait until you're ready, you'll wait forever.", author: null },
+    { text: "The mouth that won't open is the one that doesn't learn.", author: null },
+    { text: "Talk to yourself in English. Your brain is listening.", author: null },
+    { text: "Imperfect action beats perfect inaction.", author: "Harry S. Truman" },
+    { text: "Speak slowly, think loudly.", author: null },
+    { text: "Confidence is built one mistake at a time.", author: null },
+    // Mindset
+    { text: "Motivation gets you going. Habit keeps you growing.", author: null },
+    { text: "Your only competition is who you were yesterday.", author: null },
+    { text: "Don't let what you cannot do interfere with what you can do.", author: "John Wooden" },
+    { text: "Big journeys begin with small steps.", author: null },
+    { text: "Doubt kills more dreams than failure ever will.", author: "Suzy Kassem" },
+    { text: "Tough times never last, but tough people do.", author: "Robert H. Schuller" },
+    { text: "You are never too old to set another goal or to dream a new dream.", author: "C.S. Lewis" },
+    { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+    { text: "Don't count the days. Make the days count.", author: "Muhammad Ali" },
+    { text: "Every accomplishment starts with the decision to try.", author: "John F. Kennedy" },
+    { text: "Don't tell people your plans. Show them your results.", author: null },
+    { text: "Stay hungry, stay foolish.", author: "Steve Jobs" },
+    { text: "Dream big. Start small. Act now.", author: "Robin Sharma" },
+    { text: "Worry less. Smile more.", author: null },
+    { text: "Be a voice, not an echo.", author: null },
+    { text: "Embrace the glorious mess that you are.", author: "Elizabeth Gilbert" },
+    { text: "You are enough. Just as you are.", author: "Meghan Markle" },
+    { text: "When you can't find the sunshine, be the sunshine.", author: null },
+    { text: "The mind is everything. What you think, you become.", author: "Buddha" },
+    { text: "If opportunity doesn't knock, build a door.", author: "Milton Berle" },
+    // Wisdom
+    { text: "Knowing yourself is the beginning of all wisdom.", author: "Aristotle" },
+    { text: "Patience is bitter, but its fruit is sweet.", author: "Aristotle" },
+    { text: "Wherever you go, there you are.", author: "Jon Kabat-Zinn" },
+    { text: "Comparison is the thief of joy.", author: "Theodore Roosevelt" },
+    { text: "Worrying does not take away tomorrow's troubles, it takes away today's peace.", author: null },
+    { text: "Happiness is not by chance, but by choice.", author: "Jim Rohn" },
+    { text: "What screws us up most in life is the picture in our head of how it's supposed to be.", author: null },
+    { text: "The best preparation for tomorrow is doing your best today.", author: "H. Jackson Brown Jr." },
+    { text: "Don't ruin a good today by thinking about a bad yesterday.", author: null },
+    { text: "If you change nothing, nothing will change.", author: null },
+    { text: "Life shrinks or expands in proportion to one's courage.", author: "Anaïs Nin" },
+    { text: "What you do today can improve all your tomorrows.", author: "Ralph Marston" },
+    { text: "Be kind to yourself. You're doing better than you think.", author: null },
+    { text: "Slow progress is still progress.", author: null },
+    { text: "Done is better than perfect, and started is better than done.", author: null },
+    { text: "Action is what bridges the gap between dreams and reality.", author: null },
+    { text: "You don't need more time. You need more focus.", author: null },
+    { text: "One conversation at a time. One sentence at a time.", author: null }
   ];
 
-  function getDailyQuote() {
-    const day = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-    return DAILY_QUOTES[day % DAILY_QUOTES.length];
+  function getRandomQuote() {
+    return DAILY_QUOTES[Math.floor(Math.random() * DAILY_QUOTES.length)];
   }
 
   function renderDailyQuote() {
     const el = document.getElementById('dash-quote');
     if (!el) return;
-    const q = getDailyQuote();
+    const q = getRandomQuote();  // random per render (per visit / per home navigation)
     el.innerHTML = `"${q.text}"` + (q.author ? ` <span class="quote-author">— ${q.author}</span>` : '');
+  }
+
+  // ============ Today's expression (from /api/expressions/random/) ============
+  let currentExpression = null;
+
+  async function loadRandomExpression() {
+    try {
+      const r = await fetch('/api/expressions/random/');
+      if (!r.ok) return;
+      currentExpression = await r.json();
+      renderExpressionCard();
+    } catch (e) { console.warn('expression load failed', e); }
+  }
+
+  function renderExpressionCard() {
+    if (!currentExpression) return;
+    document.getElementById('expression-en').textContent = currentExpression.en;
+    document.getElementById('expression-ko').textContent = currentExpression.ko || '';
+  }
+
+  function openExpressionModal() {
+    if (!currentExpression) return;
+    const e = currentExpression;
+    document.getElementById('em-en').textContent = e.en;
+    document.getElementById('em-ko').textContent = e.ko || '';
+
+    const exWrap = document.getElementById('em-example-wrap');
+    if (e.example) {
+      document.getElementById('em-example').textContent = e.example;
+      exWrap.hidden = false;
+    } else exWrap.hidden = true;
+
+    const tipWrap = document.getElementById('em-tip-wrap');
+    if (e.tip) {
+      document.getElementById('em-tip').textContent = e.tip;
+      tipWrap.hidden = false;
+    } else tipWrap.hidden = true;
+
+    const catWrap = document.getElementById('em-category-wrap');
+    if (e.category) {
+      document.getElementById('em-category').textContent = e.category;
+      catWrap.hidden = false;
+    } else catWrap.hidden = true;
+
+    document.getElementById('expression-modal').classList.add('show');
+  }
+  function closeExpressionModal() {
+    document.getElementById('expression-modal').classList.remove('show');
+  }
+  async function showAnotherExpression() {
+    // fetch a different one (loop if same)
+    const prevId = currentExpression && currentExpression.id;
+    for (let i = 0; i < 5; i++) {
+      try {
+        const r = await fetch('/api/expressions/random/');
+        if (!r.ok) break;
+        const next = await r.json();
+        if (next.id !== prevId) {
+          currentExpression = next;
+          renderExpressionCard();
+          openExpressionModal();  // re-open with new content
+          return;
+        }
+      } catch (e) { console.warn(e); break; }
+    }
+    // fallback: just render whatever we got
+    renderExpressionCard();
+    openExpressionModal();
   }
 
   // ============ Prompts (diary) ============
@@ -3818,6 +4812,19 @@
     }
   ];
 
+  // Append any admin-added combos (data/combos_extra.json) at boot. Public endpoint.
+  (async function loadComboExtras() {
+    try {
+      const r = await fetch('/api/combos/extras/');
+      if (!r.ok) return;
+      const d = await r.json();
+      const seen = new Set(OPIC_COMBOS.map(c => c.id));
+      for (const c of (d.combos || [])) {
+        if (c && c.id && !seen.has(c.id)) { OPIC_COMBOS.push(c); seen.add(c.id); }
+      }
+    } catch (e) { console.warn('combo extras load failed', e); }
+  })();
+
   function getDailyDiaryPrompt() {
     const today = todayKey();
     if (state.dailyDiaryDate === today && state.dailyDiaryPrompt) return state.dailyDiaryPrompt;
@@ -4008,6 +5015,7 @@
   function renderHome() {
     document.getElementById('dash-date').textContent = formatDateShort();
     renderDailyQuote();
+    loadRandomExpression();  // fetch + render today's expression on each home visit
     const today = todayKey();
     const diaryDone = hasEntryForMode(today, 'diary');
     const opicDone = hasEntryForMode(today, 'opic');
@@ -6763,6 +7771,135 @@ Now output ONLY the JSON object:`;
   document.getElementById('combos-modal').addEventListener('click', e => {
     if (e.target.id === 'combos-modal') closeCombosModal();
   });
+
+  // Expression card + modal
+  document.getElementById('expression-card').addEventListener('click', openExpressionModal);
+  document.getElementById('expression-close').addEventListener('click', closeExpressionModal);
+  document.getElementById('expression-modal').addEventListener('click', e => {
+    if (e.target.id === 'expression-modal') closeExpressionModal();
+  });
+  document.getElementById('em-another').addEventListener('click', showAnotherExpression);
+
+  // ============ Library modal (expressions + quotes catalog) ============
+  let libExpressions = [];
+  let libQuotes = [];
+  let libExprQuery = '';
+  let libExprCategory = '';  // '' = all
+  let libQuoteQuery = '';
+
+  async function loadLibraryData() {
+    try {
+      const [eRes, qRes] = await Promise.all([
+        fetch('/api/expressions/'),
+        fetch('/api/quotes/'),
+      ]);
+      if (eRes.ok) {
+        const ed = await eRes.json();
+        libExpressions = ed.expressions || [];
+      }
+      if (qRes.ok) {
+        const qd = await qRes.json();
+        libQuotes = qd.quotes || [];
+      }
+    } catch (e) { console.warn('library load failed', e); }
+    document.getElementById('lib-expr-count').textContent = libExpressions.length;
+    document.getElementById('lib-quote-count').textContent = libQuotes.length;
+    renderLibCategoryBar();
+    renderLibExpressions();
+    renderLibQuotes();
+  }
+
+  function renderLibCategoryBar() {
+    const cats = Array.from(new Set(libExpressions.map(e => e.category).filter(Boolean))).sort();
+    const bar = document.getElementById('lib-category-bar');
+    bar.innerHTML = `<button class="lib-cat-chip ${libExprCategory === '' ? 'active' : ''}" data-cat="">전체</button>` +
+      cats.map(c => `<button class="lib-cat-chip ${libExprCategory === c ? 'active' : ''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('');
+    bar.querySelectorAll('.lib-cat-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        libExprCategory = btn.dataset.cat;
+        renderLibCategoryBar();
+        renderLibExpressions();
+      });
+    });
+  }
+
+  function renderLibExpressions() {
+    const q = libExprQuery.trim().toLowerCase();
+    const filtered = libExpressions.filter(e => {
+      if (libExprCategory && e.category !== libExprCategory) return false;
+      if (!q) return true;
+      return (e.en || '').toLowerCase().includes(q)
+          || (e.ko || '').toLowerCase().includes(q)
+          || (e.category || '').toLowerCase().includes(q)
+          || (e.tip || '').toLowerCase().includes(q);
+    });
+    const list = document.getElementById('lib-expr-list');
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="lib-empty">매칭되는 표현 없음</div>';
+      return;
+    }
+    list.innerHTML = filtered.map((e, i) => `
+      <div class="lib-row" data-idx="${i}">
+        <div class="lib-row-en">${escapeHtml(e.en)}${e.category ? `<span class="lib-row-cat">${escapeHtml(e.category)}</span>` : ''}</div>
+        <div class="lib-row-ko">${escapeHtml(e.ko || '')}</div>
+      </div>
+    `).join('');
+    list.querySelectorAll('.lib-row').forEach((row, i) => {
+      row.addEventListener('click', () => {
+        currentExpression = filtered[i];
+        openExpressionModal();
+      });
+    });
+  }
+
+  function renderLibQuotes() {
+    const q = libQuoteQuery.trim().toLowerCase();
+    const filtered = libQuotes.filter(qt => {
+      if (!q) return true;
+      return (qt.text || '').toLowerCase().includes(q)
+          || (qt.author || '').toLowerCase().includes(q);
+    });
+    const list = document.getElementById('lib-quote-list');
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="lib-empty">매칭되는 명언 없음</div>';
+      return;
+    }
+    list.innerHTML = filtered.map(qt => `
+      <div class="lib-row">
+        <div class="lib-row-quote">"${escapeHtml(qt.text)}"</div>
+        ${qt.author ? `<div class="lib-row-author">— ${escapeHtml(qt.author)}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function openLibraryModal() {
+    document.getElementById('library-modal').classList.add('show');
+    if (libExpressions.length === 0 && libQuotes.length === 0) loadLibraryData();
+  }
+  function closeLibraryModal() {
+    document.getElementById('library-modal').classList.remove('show');
+  }
+  document.getElementById('open-library').addEventListener('click', openLibraryModal);
+  document.getElementById('library-close').addEventListener('click', closeLibraryModal);
+  document.getElementById('library-modal').addEventListener('click', e => {
+    if (e.target.id === 'library-modal') closeLibraryModal();
+  });
+  document.getElementById('lib-expr-search').addEventListener('input', e => {
+    libExprQuery = e.target.value;
+    renderLibExpressions();
+  });
+  document.getElementById('lib-quote-search').addEventListener('input', e => {
+    libQuoteQuery = e.target.value;
+    renderLibQuotes();
+  });
+  document.querySelectorAll('[data-lib-tab]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const which = tab.dataset.libTab;
+      document.querySelectorAll('[data-lib-tab]').forEach(t => t.classList.toggle('active', t.dataset.libTab === which));
+      document.getElementById('lib-panel-expressions').hidden = which !== 'expressions';
+      document.getElementById('lib-panel-quotes').hidden = which !== 'quotes';
+    });
+  });
   document.getElementById('combo-search').addEventListener('input', e => {
     comboFilterText = e.target.value;
     renderComboList();
@@ -6771,6 +7908,472 @@ Now output ONLY the JSON object:`;
     comboShowAnsweredOnly = e.target.checked;
     renderComboList();
   });
+
+  // ============ Admin page (sidebar layout) ============
+  let adminExpressions = [];
+  let adminQuotes = [];
+  let adminCategories = [];   // [{category, n}]
+  let adminFetchSelectedCats = new Set();
+  let adminExtractSelectedCats = new Set();
+  let adminExprSelectedCat = '';
+  let adminExprQuery = '';
+  let adminQuoteQuery = '';
+  let adminComboQuery = '';
+  let recentlyAddedIds = new Set();  // ids highlighted as NEW
+
+  function showAdminPage() {
+    document.getElementById('app-header').hidden = true;
+    document.getElementById('view-login').hidden = true;
+    for (const id of ['view-home','view-diary-write','view-opic','view-feedback']) {
+      const el = document.getElementById(id); if (el) el.hidden = true;
+    }
+    document.getElementById('view-admin').hidden = false;
+    switchAdminSection('users');
+    loadAdminUsers();
+    loadAdminCatalogs();
+  }
+  function exitAdminPage() {
+    adminPassword = null;
+    document.getElementById('view-admin').hidden = true;
+    showLoginView();
+  }
+
+  function switchAdminSection(name) {
+    document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.toggle('active', b.dataset.adminSection === name));
+    document.querySelectorAll('.admin-section-panel').forEach(p => p.hidden = p.dataset.adminPanel !== name);
+    // Re-render the section in case data changed
+    if (name === 'expressions') renderAdmExpressions();
+    else if (name === 'quotes') renderAdmQuotes();
+    else if (name === 'combos') renderAdmCombos();
+  }
+
+  async function loadAdminCatalogs() {
+    try {
+      const [eRes, qRes, cRes] = await Promise.all([
+        fetch('/api/expressions/'),
+        fetch('/api/quotes/'),
+        fetch('/api/expressions/categories/'),
+      ]);
+      if (eRes.ok) adminExpressions = (await eRes.json()).expressions || [];
+      if (qRes.ok) adminQuotes = (await qRes.json()).quotes || [];
+      if (cRes.ok) adminCategories = (await cRes.json()).categories || [];
+    } catch (e) { console.warn('catalog load failed', e); }
+    document.getElementById('admin-expr-total').textContent  = adminExpressions.length;
+    document.getElementById('admin-quote-total').textContent = adminQuotes.length;
+    document.getElementById('admin-combo-total').textContent = OPIC_COMBOS.length;
+    document.getElementById('adm-expr-total').textContent  = adminExpressions.length;
+    document.getElementById('adm-quote-total').textContent = adminQuotes.length;
+    document.getElementById('adm-combo-total').textContent = OPIC_COMBOS.length;
+    document.getElementById('adm-count-expr').textContent  = adminExpressions.length;
+    document.getElementById('adm-count-quote').textContent = adminQuotes.length;
+    document.getElementById('adm-count-combo').textContent = OPIC_COMBOS.length;
+    renderAdminCategoryBars();
+    renderAdmExpressions();
+    renderAdmQuotes();
+    renderAdmCombos();
+  }
+
+  function renderAdminCategoryBars() {
+    function buildBar(elId, selectedSet, onToggle) {
+      const bar = document.getElementById(elId);
+      bar.innerHTML = adminCategories.map(c => `
+        <button class="admin-cat-chip ${selectedSet.has(c.category) ? 'active' : ''}" data-cat="${escapeHtml(c.category)}">
+          ${escapeHtml(c.category)}<span class="admin-cat-chip-count">${c.n}</span>
+        </button>
+      `).join('');
+      bar.querySelectorAll('.admin-cat-chip').forEach(btn => {
+        btn.addEventListener('click', () => { onToggle(btn.dataset.cat); buildBar(elId, selectedSet, onToggle); });
+      });
+    }
+    buildBar('admin-fetch-cat-bar', adminFetchSelectedCats, (c) => {
+      if (adminFetchSelectedCats.has(c)) adminFetchSelectedCats.delete(c);
+      else adminFetchSelectedCats.add(c);
+    });
+    buildBar('admin-extract-cat-bar', adminExtractSelectedCats, (c) => {
+      if (adminExtractSelectedCats.has(c)) adminExtractSelectedCats.delete(c);
+      else adminExtractSelectedCats.add(c);
+    });
+    // Expressions catalog bar (single-select with 전체)
+    const catBar = document.getElementById('adm-expr-cat-bar');
+    catBar.innerHTML = `<button class="admin-cat-chip ${adminExprSelectedCat === '' ? 'active' : ''}" data-cat="">전체</button>` +
+      adminCategories.map(c => `
+        <button class="admin-cat-chip ${adminExprSelectedCat === c.category ? 'active' : ''}" data-cat="${escapeHtml(c.category)}">
+          ${escapeHtml(c.category)}<span class="admin-cat-chip-count">${c.n}</span>
+        </button>
+      `).join('');
+    catBar.querySelectorAll('.admin-cat-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        adminExprSelectedCat = btn.dataset.cat;
+        renderAdminCategoryBars();
+        renderAdmExpressions();
+      });
+    });
+  }
+
+  function renderAdmExpressions() {
+    const q = adminExprQuery.trim().toLowerCase();
+    const filtered = adminExpressions.filter(e => {
+      if (adminExprSelectedCat && e.category !== adminExprSelectedCat) return false;
+      if (!q) return true;
+      return (e.en||'').toLowerCase().includes(q) || (e.ko||'').toLowerCase().includes(q)
+          || (e.category||'').toLowerCase().includes(q) || (e.tip||'').toLowerCase().includes(q);
+    });
+    // Sort: NEW first, then alphabetical
+    filtered.sort((a, b) => {
+      const aNew = recentlyAddedIds.has(a.id) ? 0 : 1;
+      const bNew = recentlyAddedIds.has(b.id) ? 0 : 1;
+      if (aNew !== bNew) return aNew - bNew;
+      return (a.en || '').localeCompare(b.en || '');
+    });
+    const list = document.getElementById('adm-expr-list');
+    if (filtered.length === 0) { list.innerHTML = '<div class="lib-empty">매칭되는 표현 없음</div>'; return; }
+    list.innerHTML = filtered.map((e, i) => `
+      <div class="lib-row ${recentlyAddedIds.has(e.id) ? 'is-new' : ''}" data-idx="${i}">
+        <div class="lib-row-en">${escapeHtml(e.en)}${recentlyAddedIds.has(e.id) ? '<span class="adm-new-badge">NEW</span>' : ''}${e.category ? `<span class="lib-row-cat">${escapeHtml(e.category)}</span>` : ''}</div>
+        <div class="lib-row-ko">${escapeHtml(e.ko || '')}</div>
+      </div>
+    `).join('');
+    list.querySelectorAll('.lib-row').forEach((row, i) => {
+      row.addEventListener('click', () => { currentExpression = filtered[i]; openExpressionModal(); });
+    });
+  }
+
+  function renderAdmQuotes() {
+    const q = adminQuoteQuery.trim().toLowerCase();
+    const filtered = adminQuotes.filter(qt => !q || (qt.text||'').toLowerCase().includes(q) || (qt.author||'').toLowerCase().includes(q));
+    const list = document.getElementById('adm-quote-list');
+    if (filtered.length === 0) { list.innerHTML = '<div class="lib-empty">매칭되는 명언 없음</div>'; return; }
+    list.innerHTML = filtered.map(qt => `
+      <div class="lib-row">
+        <div class="lib-row-quote">"${escapeHtml(qt.text)}"</div>
+        ${qt.author ? `<div class="lib-row-author">— ${escapeHtml(qt.author)}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function renderAdmCombos() {
+    const q = adminComboQuery.trim().toLowerCase();
+    const filtered = OPIC_COMBOS.filter(c => !q || c.id.toLowerCase().includes(q) || c.topic.toLowerCase().includes(q));
+    const list = document.getElementById('adm-combo-list');
+    if (filtered.length === 0) { list.innerHTML = '<div class="combo-list-empty">매칭되는 combo 없음</div>'; return; }
+    list.innerHTML = filtered.map(c => `
+      <details class="combo-row">
+        <summary>
+          <span class="combo-row-title">${escapeHtml(c.topic)}<span class="combo-row-id">${escapeHtml(c.id)}</span></span>
+          <span class="combo-row-badges"><span class="combo-row-badge">Q×${c.questions.length}</span></span>
+        </summary>
+        <div class="combo-row-body">
+          ${c.questions.map((q, i) => `
+            <div class="combo-q">
+              <div class="combo-q-head"><span class="combo-q-type">Q${i+1} · ${escapeHtml(q.type)}</span></div>
+              <div class="combo-q-text">${escapeHtml(q.text)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </details>
+    `).join('');
+  }
+
+  function markRecentlyAdded(items) {
+    if (!Array.isArray(items)) return;
+    const ids = items.map(it => it.id).filter(Boolean);
+    recentlyAddedIds = new Set([...recentlyAddedIds, ...ids]);
+    // Merge into adminExpressions in case they're not present
+    const present = new Set(adminExpressions.map(e => e.id));
+    items.forEach(it => { if (!present.has(it.id)) adminExpressions.push(it); });
+    document.getElementById('adm-expr-total').textContent = adminExpressions.length;
+    document.getElementById('adm-count-expr').textContent = adminExpressions.length;
+    document.getElementById('admin-expr-total').textContent = adminExpressions.length;
+  }
+
+  function renderAddedPanel(targetCardId, listId, countId, items) {
+    document.getElementById(targetCardId).hidden = (items.length === 0);
+    document.getElementById(countId).textContent = items.length;
+    const list = document.getElementById(listId);
+    list.innerHTML = items.map(e => `
+      <div class="lib-row" data-id="${e.id}">
+        <div class="lib-row-en">${escapeHtml(e.en)}${e.category ? `<span class="lib-row-cat">${escapeHtml(e.category)}</span>` : ''}</div>
+        <div class="lib-row-ko">${escapeHtml(e.ko || '')}</div>
+      </div>
+    `).join('');
+    list.querySelectorAll('.lib-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const id = parseInt(row.dataset.id, 10);
+        const exp = adminExpressions.find(e => e.id === id);
+        if (exp) { currentExpression = exp; openExpressionModal(); }
+      });
+    });
+  }
+
+  async function loadAdminUsers() {
+    const list = document.getElementById('admin-user-list');
+    const cnt  = document.getElementById('admin-user-count');
+    list.innerHTML = '<div class="admin-user-empty">불러오는 중…</div>';
+    try {
+      const r = await adminFetch('/api/admin/users/');
+      if (r.status === 403) { exitAdminPage(); return; }
+      const data = await r.json();
+      const users = data.users || [];
+      cnt.textContent = users.length;
+      if (users.length === 0) {
+        list.innerHTML = '<div class="admin-user-empty">등록된 사용자가 없습니다. 위에서 첫 ID를 발급하세요.</div>';
+        return;
+      }
+      list.innerHTML = users.map(u => `
+        <div class="admin-user-row">
+          <span class="admin-user-name">${escapeHtml(u.username)}</span>
+          ${u.displayName ? `<span class="admin-user-display">${escapeHtml(u.displayName)}</span>` : ''}
+          <span class="admin-user-meta">
+            <strong>${u.entriesCount ?? 0}</strong>개 entry<br>
+            <span>${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : ''}</span>
+          </span>
+          <button class="admin-user-del" data-user="${escapeHtml(u.username)}">삭제</button>
+        </div>
+      `).join('');
+      list.querySelectorAll('.admin-user-del').forEach(btn => {
+        btn.addEventListener('click', () => deleteAdminUser(btn.dataset.user));
+      });
+    } catch (e) {
+      list.innerHTML = `<div class="admin-user-empty">로드 실패: ${escapeHtml(e.message)}</div>`;
+    }
+  }
+
+  async function createAdminUser() {
+    const err = document.getElementById('admin-create-error');
+    err.hidden = true;
+    const username = document.getElementById('admin-new-username').value.trim();
+    const displayName = document.getElementById('admin-new-displayname').value.trim();
+    if (!username) { err.textContent = 'username을 입력하세요.'; err.hidden = false; return; }
+    try {
+      const r = await adminFetch('/api/admin/users/', {
+        method: 'POST',
+        body: JSON.stringify({ username, displayName }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || '생성 실패');
+      document.getElementById('admin-new-username').value = '';
+      document.getElementById('admin-new-displayname').value = '';
+      loadAdminUsers();
+    } catch (e) {
+      err.textContent = e.message;
+      err.hidden = false;
+    }
+  }
+
+  async function deleteAdminUser(username) {
+    if (!confirm(`'${username}' 사용자를 삭제합니다. 모든 entry도 함께 삭제됩니다. 계속할까요?`)) return;
+    try {
+      const r = await adminFetch('/api/admin/users/' + encodeURIComponent(username) + '/', { method: 'DELETE' });
+      if (!r.ok) throw new Error('삭제 실패');
+      if (currentUser && currentUser.username === username) doLogout();
+      loadAdminUsers();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  // --- AI generation (expressions / quotes / combos) ---
+  let adminFetchType = 'expressions';
+
+  function setAdminFetchType(type) {
+    adminFetchType = type;
+    document.querySelectorAll('[data-fetch-type]').forEach(b => b.classList.toggle('active', b.dataset.fetchType === type));
+    document.querySelectorAll('[data-fetch-panel]').forEach(p => p.hidden = p.dataset.fetchPanel !== type);
+    // sensible default counts per type
+    const cnt = document.getElementById('admin-fetch-count');
+    if (type === 'combos') cnt.value = 5;
+    else if (type === 'quotes') cnt.value = 15;
+    else cnt.value = 20;
+  }
+
+  function renderAddedPanelGeneric(type, items) {
+    const card = document.getElementById('admin-fetch-added-card');
+    const list = document.getElementById('admin-fetch-added-list');
+    const cnt  = document.getElementById('admin-fetch-added-count');
+    const goBtn = document.getElementById('admin-fetch-go-section');
+    card.hidden = items.length === 0;
+    cnt.textContent = items.length;
+    if (type === 'expressions') {
+      list.innerHTML = items.map(e => `
+        <div class="lib-row" data-id="${e.id}">
+          <div class="lib-row-en">${escapeHtml(e.en)}${e.category ? `<span class="lib-row-cat">${escapeHtml(e.category)}</span>` : ''}</div>
+          <div class="lib-row-ko">${escapeHtml(e.ko || '')}</div>
+        </div>`).join('');
+      list.querySelectorAll('.lib-row').forEach(row => {
+        row.addEventListener('click', () => {
+          const id = parseInt(row.dataset.id, 10);
+          const exp = adminExpressions.find(x => x.id === id);
+          if (exp) { currentExpression = exp; openExpressionModal(); }
+        });
+      });
+      goBtn.textContent = '💬 전체 표현에서 보기 →';
+      goBtn.onclick = () => switchAdminSection('expressions');
+    } else if (type === 'quotes') {
+      list.innerHTML = items.map(q => `
+        <div class="lib-row">
+          <div class="lib-row-quote">"${escapeHtml(q.text)}"</div>
+          ${q.author ? `<div class="lib-row-author">— ${escapeHtml(q.author)}</div>` : ''}
+        </div>`).join('');
+      goBtn.textContent = '📜 전체 명언에서 보기 →';
+      goBtn.onclick = () => switchAdminSection('quotes');
+    } else if (type === 'combos') {
+      list.innerHTML = items.map(c => `
+        <div class="lib-row">
+          <div class="lib-row-en">${escapeHtml(c.topic)}<span class="lib-row-cat">${escapeHtml(c.id)}</span></div>
+          <div class="lib-row-ko">Q×${c.questions.length} · ${c.questions.map(q => escapeHtml(q.type)).join(' / ')}</div>
+        </div>`).join('');
+      goBtn.textContent = '📚 전체 콤보에서 보기 →';
+      goBtn.onclick = () => switchAdminSection('combos');
+    }
+  }
+
+  async function adminFetchSubmit() {
+    const errEl = document.getElementById('admin-fetch-error');
+    const resEl = document.getElementById('admin-fetch-result');
+    const btn   = document.getElementById('admin-fetch-submit');
+    errEl.hidden = true; resEl.hidden = true;
+    const count = parseInt(document.getElementById('admin-fetch-count').value, 10) || 20;
+    const model = document.getElementById('admin-fetch-model').value;
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ 생성 중...';
+    try {
+      let url, body, summaryTail;
+      if (adminFetchType === 'expressions') {
+        const categories = Array.from(adminFetchSelectedCats);
+        url = '/api/admin/expressions/fetch/';
+        body = { count, model, categories };
+        summaryTail = categories.length ? ` · 카테고리 [${categories.join(', ')}]` : '';
+      } else if (adminFetchType === 'quotes') {
+        url = '/api/admin/quotes/fetch/';
+        body = { count, model };
+        summaryTail = '';
+      } else {
+        const topicHint = document.getElementById('admin-combo-topic-hint').value.trim();
+        const existing_ids = OPIC_COMBOS.map(c => c.id);
+        url = '/api/admin/combos/fetch/';
+        body = { count, model, topic_hint: topicHint, existing_ids };
+        summaryTail = topicHint ? ` · 주제 "${topicHint}"` : '';
+      }
+      const r = await adminFetch(url, { method: 'POST', body: JSON.stringify(body) });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      resEl.classList.remove('is-error');
+      const totalLabel = adminFetchType === 'combos' ? `extras ${data.total_extras}` : `총 ${data.total_now}개`;
+      resEl.innerHTML = `✅ <strong>${data.added}</strong>개 추가됨 · 중복 ${data.skipped_duplicate} · 무효 ${data.skipped_invalid} · 응답 ${data.received}/${data.requested} · ${totalLabel} (모델: ${data.model}${summaryTail})`;
+      resEl.hidden = false;
+      renderAddedPanelGeneric(adminFetchType, data.added_items || []);
+
+      if (adminFetchType === 'expressions') {
+        markRecentlyAdded(data.added_items || []);
+        loadAdminCatalogs();
+        libExpressions = []; libQuotes = [];
+      } else if (adminFetchType === 'quotes') {
+        // refresh quotes catalog
+        adminQuotes = [...adminQuotes, ...(data.added_items || [])];
+        document.getElementById('adm-quote-total').textContent = adminQuotes.length;
+        document.getElementById('adm-count-quote').textContent = adminQuotes.length;
+        document.getElementById('admin-quote-total').textContent = adminQuotes.length;
+        renderAdmQuotes();
+        libExpressions = []; libQuotes = [];
+      } else if (adminFetchType === 'combos') {
+        // append to OPIC_COMBOS in memory + bump counts
+        for (const c of (data.added_items || [])) {
+          if (!OPIC_COMBOS.some(x => x.id === c.id)) OPIC_COMBOS.push(c);
+        }
+        document.getElementById('adm-combo-total').textContent = OPIC_COMBOS.length;
+        document.getElementById('adm-count-combo').textContent = OPIC_COMBOS.length;
+        document.getElementById('admin-combo-total').textContent = OPIC_COMBOS.length;
+        renderAdmCombos();
+      }
+    } catch (e) {
+      errEl.textContent = e.message; errEl.hidden = false;
+    } finally {
+      btn.disabled = false; btn.textContent = orig;
+    }
+  }
+
+  // --- Source extraction (URL / text / file) ---
+  let adminExtractMode = 'url';
+  function setAdminExtractMode(mode) {
+    adminExtractMode = mode;
+    document.querySelectorAll('.admin-source-tab').forEach(t => t.classList.toggle('active', t.dataset.srcTab === mode));
+    document.querySelectorAll('.admin-source-panel').forEach(p => p.hidden = p.dataset.srcPanel !== mode);
+  }
+  async function adminExtractExpressions() {
+    const errEl = document.getElementById('admin-extract-error');
+    const resEl = document.getElementById('admin-extract-result');
+    const btn   = document.getElementById('admin-extract-submit');
+    errEl.hidden = true; resEl.hidden = true;
+    const count = parseInt(document.getElementById('admin-extract-count').value, 10) || 20;
+    const model = document.getElementById('admin-extract-model').value;
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ 추출 중...';
+    try {
+      let r;
+      const categories = Array.from(adminExtractSelectedCats);
+      if (adminExtractMode === 'file') {
+        const f = document.getElementById('admin-extract-file').files[0];
+        if (!f) throw new Error('파일을 선택하세요');
+        const fd = new FormData();
+        fd.append('file', f);
+        fd.append('count', String(count));
+        fd.append('model', model);
+        if (categories.length) fd.append('categories', categories.join(','));
+        r = await fetch('/api/admin/expressions/extract/', {
+          method: 'POST',
+          headers: { 'X-Admin-Password': adminPassword || '' },
+          body: fd,
+        });
+      } else {
+        const val = adminExtractMode === 'url'
+          ? document.getElementById('admin-extract-url').value.trim()
+          : document.getElementById('admin-extract-text').value;
+        if (!val) throw new Error(adminExtractMode === 'url' ? 'URL을 입력하세요' : '본문을 입력하세요');
+        r = await adminFetch('/api/admin/expressions/extract/', {
+          method: 'POST',
+          body: JSON.stringify({ source_type: adminExtractMode, value: val, count, model, categories }),
+        });
+      }
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      resEl.classList.remove('is-error');
+      const catNote = (data.categories || []).length ? ` · 카테고리 [${data.categories.join(', ')}]` : '';
+      resEl.innerHTML = `✅ <strong>${data.added}</strong>개 추가됨 · 중복 ${data.skipped_duplicate} · 무효 ${data.skipped_invalid} · 응답 ${data.received}/${data.requested} · 총 <strong>${data.total_now}</strong>개 (출처: ${escapeHtml(data.source)}, ${data.source_chars}자${catNote})`;
+      resEl.hidden = false;
+      markRecentlyAdded(data.added_items || []);
+      renderAddedPanel('admin-extract-added-card', 'admin-extract-added-list', 'admin-extract-added-count', data.added_items || []);
+      loadAdminCatalogs();
+      libExpressions = []; libQuotes = [];
+    } catch (e) {
+      errEl.textContent = e.message; errEl.hidden = false;
+    } finally {
+      btn.disabled = false; btn.textContent = orig;
+    }
+  }
+
+  document.getElementById('admin-logout-btn').addEventListener('click', exitAdminPage);
+  document.getElementById('admin-create-submit').addEventListener('click', createAdminUser);
+  document.getElementById('admin-new-displayname').addEventListener('keydown', e => {
+    if (e.key === 'Enter') createAdminUser();
+  });
+  document.getElementById('admin-fetch-submit').addEventListener('click', adminFetchSubmit);
+  document.getElementById('admin-extract-submit').addEventListener('click', adminExtractExpressions);
+  // 📎 source tabs (URL / text / file) — only the ones inside extract section
+  document.querySelectorAll('.admin-source-tab[data-src-tab]').forEach(tab => {
+    tab.addEventListener('click', () => setAdminExtractMode(tab.dataset.srcTab));
+  });
+  // 🤖 AI fetch type tabs (expressions / quotes / combos)
+  document.querySelectorAll('[data-fetch-type]').forEach(tab => {
+    tab.addEventListener('click', () => setAdminFetchType(tab.dataset.fetchType));
+  });
+  // sidebar nav
+  document.querySelectorAll('.admin-nav-item').forEach(btn => {
+    btn.addEventListener('click', () => switchAdminSection(btn.dataset.adminSection));
+  });
+  // catalog search inputs
+  document.getElementById('adm-expr-search').addEventListener('input', e => { adminExprQuery = e.target.value; renderAdmExpressions(); });
+  document.getElementById('adm-quote-search').addEventListener('input', e => { adminQuoteQuery = e.target.value; renderAdmQuotes(); });
+  document.getElementById('adm-combo-search').addEventListener('input', e => { adminComboQuery = e.target.value; renderAdmCombos(); });
+  // "→ 전체 표현에서 보기" — extract section only (fetch section's button is wired dynamically)
+  document.getElementById('admin-extract-go-expressions').addEventListener('click', () => switchAdminSection('expressions'));
 
   document.getElementById('open-tips').addEventListener('click', openTipsModal);
   document.getElementById('tips-close').addEventListener('click', closeTipsModal);
@@ -7011,7 +8614,7 @@ Now output ONLY the JSON object:`;
     renderOpicTopicPicker();
     bindScheduleInputsLive();
     try {
-      const r = await fetch('/api/settings/');
+      const r = await authFetch('/api/settings/');
       const s = await r.json();
       // DB is source of truth — re-sync picker if server differs
       const serverSel = Array.isArray(s.opic_selected_topics) ? s.opic_selected_topics : [];
@@ -7081,7 +8684,7 @@ Now output ONLY the JSON object:`;
       opic_selected_topics: topics,
     };
     try {
-      const r = await fetch('/api/settings/', {
+      const r = await authFetch('/api/settings/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -7127,10 +8730,10 @@ Now output ONLY the JSON object:`;
     }
   }
 
-  // === Init: load all entries from Django backend ===
-  async function initFromServer() {
+  // === Init: load entries (scoped to current user) + settings ===
+  async function loadEntriesAndSettings() {
     try {
-      const r = await fetch('/api/entries/');
+      const r = await authFetch('/api/entries/');
       if (r.ok) {
         const data = await r.json();
         const newEntries = {};
@@ -7140,16 +8743,18 @@ Now output ONLY the JSON object:`;
         }
         state.entries = newEntries;
         saveData(state);
+      } else if (r.status === 401) {
+        // session became invalid — bounce to login
+        doLogout();
+        return false;
       } else {
         console.error('Failed to load entries:', r.status);
       }
     } catch (e) {
-      console.error('initFromServer error', e);
+      console.error('loadEntries error', e);
     }
-    // Sync OPIc topic selection from DB (source of truth) into local state.
-    // Runs before the initial navigateTo so the first Home render uses the right pool.
     try {
-      const r2 = await fetch('/api/settings/');
+      const r2 = await authFetch('/api/settings/');
       if (r2.ok) {
         const s = await r2.json();
         const serverSel = Array.isArray(s.opic_selected_topics) ? s.opic_selected_topics : [];
@@ -7159,9 +8764,118 @@ Now output ONLY the JSON object:`;
     } catch (e) {
       console.error('settings sync error', e);
     }
-    navigateTo('home');
+    return true;
   }
-  initFromServer();
+
+  // === Login form handlers ===
+  const ADMIN_ID = 'admin';
+
+  function isAdminMode() {
+    return document.getElementById('login-username').value.trim().toLowerCase() === ADMIN_ID;
+  }
+  function updateLoginMode() {
+    const adminPwInput = document.getElementById('login-admin-pw');
+    const submitBtn    = document.getElementById('login-submit');
+    if (isAdminMode()) {
+      adminPwInput.hidden = false;
+      submitBtn.textContent = '🔐 관리자 로그인 →';
+    } else {
+      adminPwInput.hidden = true;
+      adminPwInput.value = '';
+      submitBtn.textContent = '로그인 →';
+    }
+  }
+
+  async function attemptUserLogin(username) {
+    const err = document.getElementById('login-error');
+    err.hidden = true;
+    if (!username) { err.textContent = 'ID를 입력하세요.'; err.hidden = false; return; }
+    try {
+      const u = await verifyUser(username);
+      currentUser = u;
+      setStoredUser(u);
+      // Swap in this user's namespaced cache (preserves their daily prompt cache,
+      // opic session in progress, etc.). Server fetch below fills in the truth.
+      state = loadDataForUser();
+      if (!state.entries) state.entries = {};
+      const ok = await loadEntriesAndSettings();
+      if (ok) { showAppShell(); navigateTo('home'); }
+    } catch (e) {
+      err.textContent = e.message || '로그인 실패';
+      err.hidden = false;
+    }
+  }
+
+  async function attemptAdminLogin(pw) {
+    const err = document.getElementById('login-error');
+    err.hidden = true;
+    if (!pw) { err.textContent = '관리자 비밀번호를 입력하세요.'; err.hidden = false; return; }
+    try {
+      const r = await fetch('/api/auth/admin/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pw }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || '인증 실패');
+      adminPassword = pw;
+      // reset login form, then enter the dedicated admin page
+      document.getElementById('login-username').value = '';
+      document.getElementById('login-admin-pw').value = '';
+      updateLoginMode();
+      showAdminPage();
+    } catch (e) {
+      err.textContent = e.message;
+      err.hidden = false;
+    }
+  }
+
+  function submitLogin() {
+    if (isAdminMode()) {
+      attemptAdminLogin(document.getElementById('login-admin-pw').value);
+    } else {
+      attemptUserLogin(document.getElementById('login-username').value.trim());
+    }
+  }
+
+  document.getElementById('login-username').addEventListener('input', updateLoginMode);
+  document.getElementById('login-username').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      // if admin mode, move focus to pw field instead of submitting
+      if (isAdminMode()) {
+        e.preventDefault();
+        document.getElementById('login-admin-pw').focus();
+      } else {
+        submitLogin();
+      }
+    }
+  });
+  document.getElementById('login-admin-pw').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitLogin();
+  });
+  document.getElementById('login-submit').addEventListener('click', submitLogin);
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    if (confirm('로그아웃 하시겠어요?')) doLogout();
+  });
+
+  // === Boot ===
+  (async function boot() {
+    const stored = getStoredUser();
+    if (stored && stored.username) {
+      try {
+        currentUser = await verifyUser(stored.username);
+        setStoredUser(currentUser);
+        state = loadDataForUser();
+        if (!state.entries) state.entries = {};
+        const ok = await loadEntriesAndSettings();
+        if (ok) { showAppShell(); navigateTo('home'); return; }
+      } catch (e) {
+        console.info('stored user no longer valid:', e.message);
+        setStoredUser(null);
+      }
+    }
+    showLoginView();
+  })();
 })();
 </script>
 </body>
