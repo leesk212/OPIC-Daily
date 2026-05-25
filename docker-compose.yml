@@ -1,0 +1,22 @@
+services:
+  opic-daily:
+    # Pull from GitHub Container Registry (built by .github/workflows/docker.yml)
+    image: ghcr.io/leesk212/opic-daily:latest
+    # Local-only build alternative: comment out `image:` above and uncomment:
+    # build: .
+    container_name: opic-daily
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data          # SQLite DB + logs persist on host
+      - claude-auth:/root/.claude # Claude Code CLI login persists across restarts
+    environment:
+      - PYTHONUNBUFFERED=1
+      # Optionally inject API key instead of `claude login`:
+      # - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    restart: unless-stopped
+    stdin_open: true # required for `docker exec -it ... claude login`
+    tty: true
+
+volumes:
+  claude-auth:

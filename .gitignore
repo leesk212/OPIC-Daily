@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+data/db.sqlite3
+data/*.sqlite3
+data/tunnel_url.txt
+.DS_Store
+*.log
+.env
+.env.local
+*.pid
+.claude/
+data/launchd-*

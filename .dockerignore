@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+.git/
+.gitignore
+.DS_Store
+*.log
+data/db.sqlite3
+data/*.sqlite3
+data/*.log
+data/tunnel_url.txt
+.env
+.env.local
+*.pid
+README.md.bak
