@@ -50,21 +50,23 @@ class Command(BaseCommand):
             return
 
         target = Path(options['path'])
+        # 호스트(/etc/cron.d 없음 or 권한 없음)에서는 조용히 스킵.
+        # 컨테이너에서만 실제로 파일 작성 — verbosity가 1 이상일 때만 메시지 출력.
+        verbosity = options.get('verbosity', 1)
+        if not target.parent.exists():
+            if verbosity >= 2:
+                self.stdout.write(f'(skip) {target.parent} 없음 — host 환경. install-cron.sh 사용.')
+            return
         try:
             target.write_text(body)
             try:
                 target.chmod(0o644)
             except Exception:
                 pass
-            self.stdout.write(self.style.SUCCESS(
-                f'✅ crontab 작성 → {target} ({len(hours)}개 시점: {hours})'
-            ))
+            if verbosity >= 1:
+                self.stdout.write(self.style.SUCCESS(
+                    f'✅ crontab 작성 → {target} ({len(hours)}개 시점: {hours})'
+                ))
         except PermissionError:
-            self.stdout.write(self.style.WARNING(
-                f'⚠️  {target} 쓰기 권한 없음 (호스트에서 실행 중인 듯). '
-                f'Docker 컨테이너 안에서 실행하거나 --print로 라인만 확인하세요.'
-            ))
-        except FileNotFoundError:
-            self.stdout.write(self.style.WARNING(
-                f'⚠️  {target.parent} 디렉터리 없음 (cron 미설치 환경?). 스킵.'
-            ))
+            if verbosity >= 2:
+                self.stdout.write(f'(skip) {target} 쓰기 권한 없음 — host 환경.')
