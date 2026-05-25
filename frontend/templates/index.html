@@ -3761,6 +3761,14 @@
       <div id="notify-hours-preview" style="margin-top:10px; font-size:12.5px; color:var(--accent); font-weight:600;"></div>
       <div style="margin-top:6px; font-size:11px; color:var(--muted);">횟수=0 이면 알림 비활성화. 24시 넘어가는 시간은 자동 제외.</div>
 
+      <div class="settings-row" style="margin-top:14px;">
+        <label>👤 알림 대상 user (이 user의 일기/Opic 완료 여부로 판단)</label>
+        <select id="set-notify-user" style="width:100%; padding:8px 10px; background:var(--card-2); border:1px solid var(--border); color:var(--text); border-radius:8px; font-size:13.5px;">
+          <option value="">(전체 — 모든 user 합산)</option>
+        </select>
+        <div class="hint" style="margin-top:4px;">비우면 모든 user entry 합산. 멀티유저면 본인 username 선택.</div>
+      </div>
+
       <div style="margin-top:14px; padding-top:12px; border-top:1px dashed rgba(245,158,11,0.25); display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
         <button type="button" class="ghost-btn" id="run-notify-now" style="padding:6px 12px; font-size:12px;">🚀 지금 실행 (cron 테스트)</button>
         <div style="font-size:11px; color:var(--muted);">
@@ -3777,6 +3785,23 @@
         Docker로 실행하면 컨테이너 안 <code>cloudflared</code>가 자동으로 URL을 띄워서 여기에 표시합니다.
       </div>
     </div>
+
+    <details style="margin-top:18px; padding:12px 14px; background:var(--card-2); border:1px solid var(--border); border-radius:8px;">
+      <summary style="cursor:pointer; font-size:12px; font-weight:600; color:var(--text-2);">📲 테스트 알림 커스터마이즈 (선택)</summary>
+      <div class="settings-row" style="margin-top:10px;">
+        <label>제목</label>
+        <input type="text" id="set-test-title" placeholder="🌙 매일 영어 — 테스트 알림">
+      </div>
+      <div class="settings-row" style="margin-top:8px;">
+        <label>본문 (여러 줄)</label>
+        <textarea id="set-test-message" rows="3" placeholder="비우면 기본 (표현+명언 자동 합성)" style="width:100%; padding:8px 10px; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:8px; font-size:13px; font-family:inherit; resize:vertical;"></textarea>
+      </div>
+      <div class="settings-row" style="margin-top:8px;">
+        <label>ntfy 태그 (쉼표 구분, 예: <code>books, white_check_mark</code>)</label>
+        <input type="text" id="set-test-tags" placeholder="white_check_mark">
+      </div>
+      <div class="hint" style="margin-top:6px;">제목·본문·태그 모두 비우면 기본 포맷으로 발송. 입력한 필드만 override.</div>
+    </details>
 
     <div class="settings-actions">
       <button class="ghost-btn" id="settings-test">📲 테스트 알림</button>
@@ -8724,6 +8749,7 @@ Now output ONLY the JSON object:`;
       document.getElementById('set-notify-count').value = (s.notify_count != null ? s.notify_count : 1);
       renderHoursPreview(s.notify_hours_preview);
       renderLastNotifyRun(s.last_notify_run);
+      await populateNotifyUserDropdown(s.notify_user || '');
 
       const ntfyHint = document.getElementById('ntfy-topic-hint');
       if (s.ntfy_topic) {
@@ -8774,6 +8800,7 @@ Now output ONLY the JSON object:`;
     const body = {
       site_url: document.getElementById('set-site-url').value.trim(),
       ntfy_topic: document.getElementById('set-ntfy-topic').value.trim(),
+      notify_user: document.getElementById('set-notify-user').value,
       notify_start_hour: parseInt(document.getElementById('set-notify-start-hour').value, 10),
       notify_interval_hours: parseInt(document.getElementById('set-notify-interval-hours').value, 10),
       notify_count: parseInt(document.getElementById('set-notify-count').value, 10),
@@ -8810,15 +8837,61 @@ Now output ONLY the JSON object:`;
       showSettingsResult('저장 실패: ' + e.message, false);
     }
   }
+  async function populateNotifyUserDropdown(currentValue) {
+    const sel = document.getElementById('set-notify-user');
+    if (!sel) return;
+    // Reset to base placeholder option
+    sel.innerHTML = '<option value="">(전체 — 모든 user 합산)</option>';
+    try {
+      const r = await fetch('/api/admin/users/', {
+        headers: state.adminPassword ? { 'X-Admin-Password': state.adminPassword } : {}
+      });
+      if (r.ok) {
+        const d = await r.json();
+        const users = Array.isArray(d.users) ? d.users : (Array.isArray(d) ? d : []);
+        for (const u of users) {
+          const opt = document.createElement('option');
+          opt.value = u.username;
+          opt.textContent = `${u.username}${u.displayName ? ' (' + u.displayName + ')' : ''}`;
+          sel.appendChild(opt);
+        }
+      }
+    } catch (e) { /* admin auth 없으면 그냥 전체만 보임 */ }
+    // 현재 user 추가로 보장 (admin이 아니어도 본인은 선택 가능)
+    if (state.currentUser && state.currentUser.username) {
+      const me = state.currentUser.username;
+      if (!Array.from(sel.options).some(o => o.value === me)) {
+        const opt = document.createElement('option');
+        opt.value = me;
+        opt.textContent = `${me} (나)`;
+        sel.appendChild(opt);
+      }
+    }
+    sel.value = currentValue || '';
+  }
+
   async function testNotifyNow() {
     showSettingsResult('📤 발송 중...', true);
+    const title = document.getElementById('set-test-title').value.trim();
+    const message = document.getElementById('set-test-message').value;  // 줄바꿈 유지
+    const tagsRaw = document.getElementById('set-test-tags').value.trim();
+    const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : null;
+    const body = {};
+    if (title) body.title = title;
+    if (message.trim()) body.message = message;
+    if (tags && tags.length) body.tags = tags;
     try {
-      const r = await fetch('/api/test-notify/', { method: 'POST' });
+      const r = await fetch('/api/test-notify/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
       const url = `https://ntfy.sh/${data.topic}`;
+      const customNote = Object.keys(body).length ? ` <span style="color:var(--accent); font-size:11px;">· 커스텀 ${Object.keys(body).join('+')}</span>` : '';
       showSettingsResult(
-        `✅ 발송 완료<br>방식: ⚡ ntfy.sh 푸시<br>대상: <strong>${data.topic}</strong><br>📡 <a href="${url}" target="_blank" style="color:var(--opic);">${url}</a> 열어서 확인`,
+        `✅ 발송 완료${customNote}<br>방식: ⚡ ntfy.sh 푸시<br>대상: <strong>${data.topic}</strong><br>📡 <a href="${url}" target="_blank" style="color:var(--opic);">${url}</a> 열어서 확인`,
         true
       );
     } catch (e) {

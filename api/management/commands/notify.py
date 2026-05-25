@@ -44,11 +44,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         today_str = date.today().isoformat()
+        s = get_settings()
+        notify_user = (s.get('notify_user') or '').strip()
         entries = Entry.objects.filter(date=today_str)
+        if notify_user:
+            entries = entries.filter(user__username=notify_user)
+            self.stdout.write(f'👤 user 필터: {notify_user}')
         has_diary = entries.filter(mode='diary').exists()
         has_opic = entries.filter(mode='opic').exists()
-
-        s = get_settings()
 
         # tunnel URL 파일이 있으면 우선
         tunnel_file = Path(django_settings.BASE_DIR) / 'data' / 'tunnel_url.txt'
@@ -71,14 +74,15 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('✅ 오늘 둘 다 완료. 알림 안 보냄.'))
             return
 
+        who = f'[{notify_user}] ' if notify_user else ''
         if has_diary and has_opic:
-            status_line = '✅ 오늘 일기+Opic 둘 다 완료 (강제 알림)'
+            status_line = f'✅ {who}오늘 일기+Opic 둘 다 완료 (강제 알림)'
         elif has_diary:
-            status_line = '📝 일기 완료 / 🎤 Opic 미완료'
+            status_line = f'📝 {who}일기 완료 / 🎤 Opic 미완료'
         elif has_opic:
-            status_line = '🎤 Opic 완료 / 📝 일기 미완료'
+            status_line = f'🎤 {who}Opic 완료 / 📝 일기 미완료'
         else:
-            status_line = '☐ 일기 + ☐ Opic 둘 다 미완료'
+            status_line = f'☐ {who}일기 + ☐ Opic 둘 다 미완료'
 
         title = '🌙 오늘의 영어 시간'
         message = build_notification_body(random.choice(FLAVORS), status_line)

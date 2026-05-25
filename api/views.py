@@ -42,6 +42,8 @@ DEFAULT_SETTINGS = {
     'notify_start_hour': 23,           # 0-23
     'notify_interval_hours': 1,        # 1-24
     'notify_count': 1,                 # 0-24 (0이면 비활성화)
+    # cron이 누구의 일기/Opic 완료 여부를 볼지. 비우면 모든 user 합산.
+    'notify_user': '',
 }
 
 SETTINGS_KEY = 'app_settings'
@@ -1468,7 +1470,7 @@ def settings_view(request):
 
     # --- global keys ---
     to_save: dict = {}
-    for k in ['site_url', 'ntfy_topic']:
+    for k in ['site_url', 'ntfy_topic', 'notify_user']:
         if k in data:
             to_save[k] = str(data[k]).strip()
     int_fields = {
@@ -1545,7 +1547,10 @@ def _notify_log_mtime() -> str | None:
 @csrf_exempt
 @require_http_methods(['POST'])
 def test_notify(request):
-    """현재 저장된 ntfy 토픽으로 테스트 푸시 발송."""
+    """현재 저장된 ntfy 토픽으로 테스트 푸시 발송.
+    POST body로 custom 포맷 지정 가능:
+      {"title": "...", "message": "...", "tags": ["books", ...]}
+    필드 비우면 기본 메시지/제목 사용."""
     from .mailer import send_via_ntfy, MailerError
 
     s = get_settings()
@@ -1563,17 +1568,28 @@ def test_notify(request):
         if url:
             site_url = url
 
-    message = build_notification_body(
-        'ntfy 알림이 정상 동작합니다 ✨',
-    )
+    # custom 포맷 파싱 (body 비어도 OK)
+    try:
+        data = json.loads(request.body or b'{}')
+    except json.JSONDecodeError:
+        data = {}
+    custom_title = (data.get('title') or '').strip()
+    custom_message = (data.get('message') or '').strip()
+    custom_tags = data.get('tags') if isinstance(data.get('tags'), list) else None
+
+    title = custom_title or '🌙 매일 영어 — 테스트 알림'
+    if custom_message:
+        message = custom_message
+    else:
+        message = build_notification_body('ntfy 알림이 정상 동작합니다 ✨')
 
     try:
         result = send_via_ntfy(
             topic=ntfy_topic,
-            title='🌙 매일 영어 — 테스트 알림',
+            title=title,
             message=message,
             click_url=site_url,
-            tags=['white_check_mark'],
+            tags=custom_tags or ['white_check_mark'],
         )
         return JsonResponse({
             'status': 'sent',

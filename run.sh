@@ -34,6 +34,11 @@ python manage.py makemigrations api --noinput
 echo "🗄  DB 마이그레이션..."
 python manage.py migrate --noinput
 
+# Expression 시드 데이터를 DB로 적재 (idempotent upsert)
+if [ -f "data/expressions.json" ]; then
+  python manage.py seed_expressions 2>&1 | tail -1 || true
+fi
+
 mkdir -p data
 
 # ⚙️ 설정에 저장된 알림 스케줄을 호스트 user crontab에 자동 등록.

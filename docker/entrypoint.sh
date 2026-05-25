@@ -4,6 +4,11 @@ set -e
 mkdir -p /app/data
 python manage.py migrate --noinput
 
+# Expression 시드 데이터 자동 적재 (이미지 안에 data/expressions.json 포함)
+if [ -f /app/data/expressions.json ]; then
+  python manage.py seed_expressions 2>&1 | tail -1 || true
+fi
+
 # ===== 1. Generate crontab from saved settings, then start cron daemon =====
 echo "🕐 Generating /etc/cron.d/opic-daily from settings (TZ=$TZ)..."
 python manage.py write_crontab || echo "  (write_crontab skipped/failed — using empty schedule)"
