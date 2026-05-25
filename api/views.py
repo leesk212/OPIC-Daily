@@ -1,4 +1,6 @@
 """API views for entries and AI feedback."""
+from __future__ import annotations  # Python 3.9 호환 — `str | None` 등 PEP 604 어노테이션 lazy 평가
+
 import json
 import logging
 import re
