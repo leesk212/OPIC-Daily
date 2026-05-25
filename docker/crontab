@@ -1,0 +1,6 @@
+SHELL=/bin/sh
+PATH=/usr/local/bin:/usr/bin:/bin
+
+# 매일 23:00 Asia/Seoul — 오늘 일기/Opic 안 했으면 알림 발송
+# 시스템 crontab 포맷이므로 5번째 필드 다음에 user 필드(root) 들어감
+0 23 * * * root cd /app && /usr/local/bin/python manage.py notify >> /app/data/notify.log 2>&1

@@ -30,7 +30,12 @@ cd opic-daily
 
 ## 🐳 Docker로 실행 (한 줄 시작)
 
-호스트에 Python·Node·`claude` CLI 설치 없이도 컨테이너 하나로 동일 환경에서 실행됩니다. Claude Code CLI는 이미지 안에 포함돼 있고, 인증 세션과 SQLite DB는 볼륨으로 보존됩니다.
+호스트에 Python·Node·`claude` CLI·`cloudflared`·cron 설치 없이도 컨테이너 하나로 동일 환경에서 실행됩니다. 컨테이너 안에서 자동으로:
+
+- 🌐 **Cloudflare Quick Tunnel** 시작 → URL을 `data/tunnel_url.txt`에 기록 → 설정 UI + 알림 이메일 링크에 자동 반영
+- 🕐 **매일 23:00 KST cron** 등록 → `python manage.py notify`가 자동 실행 (tunnel URL을 site_url로 사용)
+- 🤖 **Claude Code CLI** 번들 (subprocess로 호출)
+- 💾 SQLite DB + Claude 인증 세션은 볼륨으로 보존
 
 ### 1) docker compose로 (가장 추천)
 

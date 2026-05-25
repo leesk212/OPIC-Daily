@@ -242,68 +242,45 @@
   .dash-card.diary .dash-card-cta { color: var(--accent); }
   .dash-card.opic .dash-card-cta { color: var(--opic); }
 
-  /* ===== Writing Tips (AL-tier guide) ===== */
-  .dash-tips {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 28px;
+  /* ===== Tips Modal (AL-tier guide) ===== */
+  .tips-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
   }
-  @media (max-width: 600px) {
-    .dash-tips { grid-template-columns: 1fr; }
-  }
-  .tips-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 14px 18px;
-    overflow: hidden;
-  }
-  .tips-card.diary { border-left: 3px solid var(--accent); }
-  .tips-card.opic  { border-left: 3px solid var(--opic); }
-  .tips-card > summary {
-    cursor: pointer;
-    list-style: none;
+  .tips-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
     font-size: 14px;
     font-weight: 600;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 4px 0;
-    user-select: none;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
   }
-  .tips-card > summary::-webkit-details-marker { display: none; }
-  .tips-card > summary::after {
-    content: "▾";
-    font-size: 12px;
-    color: var(--muted);
-    transition: transform 0.15s;
-  }
-  .tips-card[open] > summary::after { transform: rotate(180deg); }
-  .tips-card.diary > summary { color: var(--accent); }
-  .tips-card.opic  > summary { color: var(--opic); }
-  .tips-card .tips-body {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px dashed var(--border);
-    font-size: 13.5px;
-    line-height: 1.65;
+  .tips-tab:hover { color: var(--text-2); }
+  .tips-tab.active.diary { color: var(--accent); border-bottom-color: var(--accent); }
+  .tips-tab.active.opic  { color: var(--opic);   border-bottom-color: var(--opic); }
+  .tips-panel { display: none; }
+  .tips-panel.active { display: block; }
+  .tips-panel ol {
+    margin: 0 0 14px;
+    padding-left: 22px;
+    font-size: 14px;
+    line-height: 1.7;
     color: var(--text-2);
   }
-  .tips-card .tips-body ol {
-    margin: 0 0 10px;
+  .tips-panel ol li { margin-bottom: 8px; }
+  .tips-panel ul {
+    margin: 4px 0 0;
     padding-left: 20px;
   }
-  .tips-card .tips-body ol li { margin-bottom: 6px; }
-  .tips-card .tips-body ul {
-    margin: 4px 0 0;
-    padding-left: 18px;
-  }
-  .tips-card .tips-body ul li { margin-bottom: 2px; }
-  .tips-card .tips-body strong { color: var(--text); }
-  .tips-card .tips-body code {
+  .tips-panel ul li { margin-bottom: 3px; }
+  .tips-panel strong { color: var(--text); }
+  .tips-panel em { color: var(--text-2); font-style: italic; }
+  .tips-panel code {
     background: var(--card-2);
     border: 1px solid var(--border);
     border-radius: 4px;
@@ -311,16 +288,59 @@
     font-size: 12.5px;
     color: var(--text);
   }
-  .tips-card .tips-pro {
-    margin-top: 10px;
+  .tips-pro {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: var(--card-2);
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-2);
+  }
+  .tips-pro-title {
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .tips-panel.diary .tips-pro { border-left: 3px solid var(--accent); }
+  .tips-panel.opic  .tips-pro { border-left: 3px solid var(--opic); }
+  .tips-intro {
+    font-size: 14px;
+    color: var(--text-2);
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .tips-intro strong { color: var(--text); }
+  .tips-example {
+    margin-top: 8px;
     padding: 10px 12px;
     background: var(--card-2);
     border-radius: 8px;
-    font-size: 12.5px;
+    font-size: 13px;
+    line-height: 1.65;
     color: var(--text-2);
   }
-  .tips-card.diary .tips-pro { border-left: 2px solid var(--accent); }
-  .tips-card.opic  .tips-pro { border-left: 2px solid var(--opic); }
+  .tips-example-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .tips-bad {
+    color: var(--danger);
+    margin-bottom: 4px;
+  }
+  .tips-good {
+    color: var(--success);
+  }
+  .tips-quote {
+    color: var(--muted);
+    font-size: 12.5px;
+  }
 
   /* Mini jandi on dashboard */
   .mini-activity {
@@ -2000,6 +2020,7 @@
       <span class="chip-label">일</span>
     </button>
     <button class="icon-btn" id="open-stats" title="활동 그래프">📊</button>
+    <button class="icon-btn" id="open-tips" title="AL 작성 팁">💡</button>
     <button class="icon-btn" id="open-settings" title="알림 설정">⚙️</button>
   </div>
 </header>
@@ -2039,56 +2060,6 @@
         <div class="dash-card-meta">음성으로 30초~1분 답변</div>
         <div class="dash-card-cta">답하러 가기 →</div>
       </button>
-    </div>
-
-    <!-- ===== Writing Tips (AL-tier guide) ===== -->
-    <div class="dash-tips">
-      <details class="tips-card diary">
-        <summary>💡 일기 작성 팁 — AL급 구조로 쓰는 법</summary>
-        <div class="tips-body">
-          <ol>
-            <li><strong>오프닝 1문장</strong> — 오늘의 핵심 감정/사건을 한 줄 요약 <em>(Today turned out to be… / I had one of those days where…)</em></li>
-            <li><strong>구체적 디테일 2~3개</strong> — 언제·어디서·누구와·왜. 감각 묘사 포함 <em>(the smell of, the sound of, I could feel…)</em></li>
-            <li><strong>대조/전환</strong> — <code>However</code>, <code>That said</code>, <code>What surprised me was…</code> 로 한 단계 깊이 추가</li>
-            <li><strong>감정 + 이유</strong> — 단순 happy/sad 금지. 정확한 형용사: <em>relieved, overwhelmed, nostalgic, bittersweet, drained</em> + because절</li>
-            <li><strong>클로징 1문장</strong> — 교훈, 내일 계획, 또는 한 줄 평 <em>(I guess… / Looking back, …)</em></li>
-          </ol>
-          <div class="tips-pro">
-            🎯 <strong>AL 필살기</strong> — 매 일기마다 의식적으로 1~2개 섞기:<br>
-            • <strong>관용구/Phrasal verb</strong>: <code>pull off</code>, <code>get away with</code>, <code>end up -ing</code><br>
-            • <strong>가정법</strong>: <code>If I had known…, I would have…</code><br>
-            • <strong>분사구문</strong>: <code>Walking home, I realized…</code><br>
-            • <strong>강조 도치</strong>: <code>Never have I felt so…</code>
-          </div>
-        </div>
-      </details>
-
-      <details class="tips-card opic">
-        <summary>💡 OPIc 답변 팁 — AL 4단계 프레임</summary>
-        <div class="tips-body">
-          <ol>
-            <li><strong>Lead-in (5초)</strong> — 시간 벌면서 자연스러움: <em>"Oh, that's an interesting question. Let me think for a sec…"</em></li>
-            <li><strong>Main Point (10초)</strong> — 결론/입장 한 문장: <em>"Well, when it comes to ___, I'd say ___."</em></li>
-            <li><strong>Body — 구체적 일화 (30~40초)</strong>
-              <ul>
-                <li>시점 설정: <em>"Actually, just last week…"</em></li>
-                <li>장면 묘사: who / where / what happened</li>
-                <li>감정 + 반응: <em>"I was totally caught off guard."</em></li>
-                <li>대화 인용도 OK: <em>"and she was like, 'No way!'"</em></li>
-              </ul>
-            </li>
-            <li><strong>Closing (5~10초)</strong> — 의견으로 다시 묶기: <em>"So yeah, that's pretty much why I think ___."</em></li>
-          </ol>
-          <div class="tips-pro">
-            🎯 <strong>AL 필살기</strong>:<br>
-            • <strong>Filler 자연스럽게</strong>: <code>you know</code>, <code>kind of</code>, <code>I mean</code>, <code>actually</code> — 너무 매끄러우면 오히려 감점<br>
-            • <strong>고급 문법 1개 이상</strong>: 가정법 <code>If I were to…</code>, 현재완료 <code>I've been -ing for…</code>, 관계대명사<br>
-            • <strong>비교/대조</strong>: <code>Unlike when I was younger, now I…</code><br>
-            • <strong>과장된 톤 허용</strong>: 모범생처럼 말하지 말기 — <em>"It was such a mess, honestly."</em><br>
-            • <strong>질문 재확인 금지</strong>: 그냥 자연스럽게 시작 — 기계처럼 "The question is asking about…" 절대 NO
-          </div>
-        </div>
-      </details>
     </div>
 
     <div class="compact-activity" id="compact-activity">
@@ -2286,6 +2257,151 @@
       </div>
       <div style="font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.5;">
         Django 로컬 버전으로 옮길 때 사용하세요. JSON 파일로 export → 로컬 서버에 import.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tips Modal -->
+<div class="modal-overlay" id="tips-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>💡 AL 작성 팁</h2>
+      <button class="modal-close" id="tips-close">×</button>
+    </div>
+
+    <div class="tips-tabs">
+      <button class="tips-tab diary active" data-tips-tab="diary">📝 일기</button>
+      <button class="tips-tab opic" data-tips-tab="opic">🎤 OPIc</button>
+    </div>
+
+    <div class="tips-panel diary active" id="tips-panel-diary">
+      <div class="tips-intro">💡 <strong>더 잘 쓰는 5가지</strong> — 매일 한 가지씩 시도해보기</div>
+
+      <ol>
+        <li>
+          <strong>주제 먼저 잡기</strong><br>
+          오늘 하루에서 가장 인상 깊었던 <strong>한 가지</strong>에 집중하세요. 거창할 필요 없고, 작은 순간이 오히려 좋아요. 여러 개를 나열하기보다 <strong>하나를 깊게</strong>.
+          <div class="tips-example">
+            <div class="tips-example-label">좋은 주제 예시</div>
+            ☕ 오랜만에 간 카페의 햇살 · 🚶 퇴근길 산책 5분 · 🍱 점심 메뉴 고민 · 📞 친구와의 짧은 통화 · 🎵 출근길에 들은 노래 한 곡
+          </div>
+        </li>
+
+        <li>
+          <strong>구체적 디테일 추가</strong><br>
+          막연한 "좋았다/슬펐다" 대신 <strong>언제·어디서·누구와·무엇을·왜</strong>를 넣어요. 구체적일수록 글이 살아납니다.
+          <div class="tips-example">
+            <div class="tips-example-label">비교 예시</div>
+            <div class="tips-bad">❌ I went out today and it was nice.</div>
+            <div class="tips-good">✅ After work around 7 PM, I walked alone at Seokchon Lake. The sky was orange and a soft breeze made me feel calm.</div>
+          </div>
+        </li>
+
+        <li>
+          <strong>감정·반응 표현 넣기</strong><br>
+          사건만 적지 말고 <strong>"내가 어떻게 느꼈는지"</strong>를 한두 줄 끼워 넣어요. 영어 일기의 핵심은 '감정의 흐름'.
+          <div class="tips-example">
+            <div class="tips-example-label">자주 쓰는 감정 패턴</div>
+            • <em>I felt relaxed / refreshed / proud / a little nervous</em><br>
+            • <em>It made me think about ~</em><br>
+            • <em>It reminded me of ~</em><br>
+            • <em>I was surprised that ~</em>
+          </div>
+        </li>
+
+        <li>
+          <strong>연결어로 흐름 만들기</strong><br>
+          문장을 점프하지 말고 <strong>이유/대조/순서</strong>를 묶어주는 단어 넣기. 문장 하나하나 따로 떨어져 있으면 어색하고, 묶이면 자연스러워요.
+          <div class="tips-example">
+            <div class="tips-example-label">상황별 연결어</div>
+            • 이유: <code>because</code> · <code>since</code> · <code>so</code><br>
+            • 대조: <code>however</code> · <code>but</code> · <code>although</code><br>
+            • 순서: <code>first</code> · <code>then</code> · <code>after that</code> · <code>finally</code><br>
+            • 예시: <code>for example</code> · <code>like</code>
+          </div>
+        </li>
+
+        <li>
+          <strong>마무리 한 줄 — 회고 또는 다짐</strong><br>
+          마지막에 <strong>오늘에서 무엇을 느꼈는지 / 내일 어떻게 하고 싶은지</strong> 한 줄. 평범한 일기를 한 단계 위로 끌어올리는 마법의 한 문장.
+          <div class="tips-example">
+            <div class="tips-example-label">마무리 템플릿</div>
+            • <em>I realized that ~</em> <span class="tips-quote">("I realized that even a short walk can change my mood.")</span><br>
+            • <em>I'm going to ~ tomorrow</em> <span class="tips-quote">("I'm going to wake up earlier tomorrow.")</span><br>
+            • <em>It was a small moment, but ~</em> <span class="tips-quote">("It was a small moment, but it really mattered.")</span>
+          </div>
+        </li>
+      </ol>
+
+      <div class="tips-pro">
+        💡 처음엔 다 못 챙겨도 OK. <strong>하나씩 늘려가면 한 달 뒤 글이 달라져요.</strong>
+      </div>
+    </div>
+
+    <div class="tips-panel opic" id="tips-panel-opic">
+      <div class="tips-intro">🎯 <strong>AL 답변 핵심 5가지</strong> — 유창함 &gt; 어려운 단어</div>
+
+      <ol>
+        <li>
+          <strong>Main Point 먼저 말하기</strong><br>
+          첫 문장에 <strong>"내 답의 핵심"</strong>을 박아넣어요. 뜸 들이면 IM, 바로 답하면 IH/AL. 준비 시간에 <strong>결론부터</strong> 떠올리는 연습.
+          <div class="tips-example">
+            <div class="tips-example-label">강력한 오프닝</div>
+            • <em>Well, I would say I really like ~</em><br>
+            • <em>Honestly, the first thing that comes to mind is ~</em><br>
+            • <em>I think one of my favorite ~ is ~</em><br>
+            • <em>For me, ~ is something I do almost every day.</em>
+          </div>
+        </li>
+
+        <li>
+          <strong>What / Feeling / Why 묶어서 초반에</strong><br>
+          Main Point 직후 3가지 정보를 한 묶음으로: <strong>뭐(What) · 어떻게 느끼는지(Feeling) · 왜(Why)</strong>. 이 패턴만 잡혀도 답변이 구조적으로 들려요.
+          <div class="tips-example">
+            <div class="tips-example-label">템플릿</div>
+            <div class="tips-good">"Well, I really love walking at Seokchon Lake <strong>[What]</strong>. It helps me relax <strong>[Feeling]</strong> because I can clear my mind after a long day <strong>[Why]</strong>."</div>
+          </div>
+        </li>
+
+        <li>
+          <strong>자연스러운 필러 사용</strong><br>
+          침묵하는 것보다 필러 한두 단어가 훨씬 자연스러워요. 외운 티 빼고 <strong>친구랑 얘기하는 느낌</strong>으로. 단, 같은 필러를 반복하면 어색하니 섞어쓰기.
+          <div class="tips-example">
+            <div class="tips-example-label">상황별 필러</div>
+            • 시간 벌기: <code>Well, ...</code> · <code>Let me think...</code> · <code>That's a good question.</code><br>
+            • 의견 시작: <code>Honestly, ...</code> · <code>I would say ~</code> · <code>To be honest, ~</code><br>
+            • 덧붙이기: <code>You know, ~</code> · <code>I mean, ~</code> · <code>The thing is, ~</code>
+          </div>
+        </li>
+
+        <li>
+          <strong>시제 다양하게 섞기</strong><br>
+          한 가지 시제만 쓰면 IM2~IM3. <strong>과거 경험 + 현재 습관 + (미래 계획)</strong>을 섞으면 IH/AL이 보입니다. 특히 "memorable experience" 질문은 과거형이 자연스러워야 해요.
+          <div class="tips-example">
+            <div class="tips-example-label">시제 믹스 예시</div>
+            • 과거: <em>Last weekend, I went to the park with my friend.</em><br>
+            • 현재 습관: <em>I usually go there after work.</em><br>
+            • 현재 완료: <em>I have been going there more often these days.</em><br>
+            • 미래: <em>I'm planning to visit again this weekend.</em>
+          </div>
+        </li>
+
+        <li>
+          <strong>Wrap-up — 끝맺음 한 줄</strong><br>
+          답변을 그냥 멈추지 말고 <strong>"그래서 이게 나한테 의미가 있다"</strong>는 마무리 한 줄. 면접관에게 "끝났다"는 신호를 주는 동시에 답변이 완결됩니다.
+          <div class="tips-example">
+            <div class="tips-example-label">자주 쓰는 wrap-up</div>
+            • <em>So overall, ~</em> <span class="tips-quote">("So overall, it's a big part of my life.")</span><br>
+            • <em>So that's why I like ~</em> <span class="tips-quote">("So that's why I really enjoy walking.")</span><br>
+            • <em>That's why it means a lot to me.</em><br>
+            • <em>It's not a big deal, but it's meaningful to me.</em>
+          </div>
+        </li>
+      </ol>
+
+      <div class="tips-pro">
+        🎯 <strong>AL = 친구에게 말하듯 자연스럽게 + 구조적으로.</strong> 어려운 단어는 함정이에요.
       </div>
     </div>
   </div>
@@ -5114,6 +5230,26 @@ Now output ONLY the JSON object:`;
   });
   document.getElementById('export-data').addEventListener('click', exportData);
   document.getElementById('import-data').addEventListener('click', importData);
+
+  // Tips modal
+  function openTipsModal() {
+    document.getElementById('tips-modal').classList.add('show');
+  }
+  function closeTipsModal() {
+    document.getElementById('tips-modal').classList.remove('show');
+  }
+  document.getElementById('open-tips').addEventListener('click', openTipsModal);
+  document.getElementById('tips-close').addEventListener('click', closeTipsModal);
+  document.getElementById('tips-modal').addEventListener('click', e => {
+    if (e.target.id === 'tips-modal') closeTipsModal();
+  });
+  document.querySelectorAll('.tips-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const which = tab.dataset.tipsTab;
+      document.querySelectorAll('.tips-tab').forEach(t => t.classList.toggle('active', t.dataset.tipsTab === which));
+      document.querySelectorAll('.tips-panel').forEach(p => p.classList.toggle('active', p.id === `tips-panel-${which}`));
+    });
+  });
 
   // Settings modal
   document.getElementById('open-settings').addEventListener('click', openSettingsModal);
