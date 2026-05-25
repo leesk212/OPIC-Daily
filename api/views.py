@@ -14,22 +14,23 @@ from .prompts import build_diary_prompt, build_opic_prompt
 
 # Default settings (used as fallback; UI shows these prefilled)
 DEFAULT_SETTINGS = {
-    'notify_email_to': 'leesk212@gmail.com',
-    'notify_email_from': '',          # 발신자 이메일 (Direct MX 모드에서 보일 주소)
-    'notify_from_name': '매일 영어',  # 발신자 이름
     'site_url': 'http://localhost:8000',
-    # ntfy.sh 푸시 알림 (있으면 자동 사용 — 가장 간단)
-    'ntfy_topic': '',                 # 예: opic-daily-leesk212-secret-7n3
-    # Gmail SMTP (있으면 사용 — 실제 이메일 원할 때)
-    'gmail_user': '',
-    'gmail_app_password': '',
+    'ntfy_topic': '',                  # 예: opic-daily-leesk212-7n3xq
+    # 알림 스케줄 (24h, KST 기준 — cron이 들고 있음)
+    'notify_start_hour': 23,           # 0-23
+    'notify_interval_hours': 1,        # 1-24
+    'notify_count': 1,                 # 0-24 (0이면 비활성화)
 }
 
 SETTINGS_KEY = 'app_settings'
 
+# Whitelist of keys the API surfaces. Orphaned DB keys from earlier
+# (email/SMTP era) are intentionally dropped so they never leak to clients.
+ALLOWED_SETTING_KEYS = set(DEFAULT_SETTINGS.keys()) | {'opic_selected_topics'}
+
 
 def get_settings() -> dict:
-    """Load settings: DB → env → defaults"""
+    """Load settings: DB → env → defaults, filtered to ALLOWED_SETTING_KEYS."""
     try:
         pref = Preference.objects.get(key=SETTINGS_KEY)
         stored = pref.value if isinstance(pref.value, dict) else {}
@@ -37,33 +38,64 @@ def get_settings() -> dict:
         stored = {}
 
     merged = dict(DEFAULT_SETTINGS)
-    # env overrides defaults
     import os as _os
     env_map = {
-        'notify_email_to': 'NOTIFY_EMAIL',
-        'notify_email_from': 'NOTIFY_FROM_EMAIL',
-        'notify_from_name': 'NOTIFY_FROM_NAME',
         'site_url': 'SITE_URL',
-        'gmail_user': 'GMAIL_USER',
-        'gmail_app_password': 'GMAIL_APP_PASSWORD',
         'ntfy_topic': 'NTFY_TOPIC',
     }
     for k, env_k in env_map.items():
         v = _os.environ.get(env_k)
         if v:
             merged[k] = v
-    # DB overrides everything
-    merged.update({k: v for k, v in stored.items() if v not in (None, '')})
-    return merged
+    # DB overrides — but only for keys we still support
+    merged.update({
+        k: v for k, v in stored.items()
+        if k in ALLOWED_SETTING_KEYS and v not in (None, '')
+    })
+    for k in ('notify_start_hour', 'notify_interval_hours', 'notify_count'):
+        try:
+            merged[k] = int(merged.get(k, DEFAULT_SETTINGS[k]))
+        except (TypeError, ValueError):
+            merged[k] = DEFAULT_SETTINGS[k]
+    return {k: v for k, v in merged.items() if k in ALLOWED_SETTING_KEYS}
 
 
 def save_settings(new: dict) -> dict:
     pref, _ = Preference.objects.get_or_create(key=SETTINGS_KEY, defaults={'value': {}})
     cur = pref.value if isinstance(pref.value, dict) else {}
+    # Don't filter empty lists ([] is valid for opic_selected_topics meaning "use all")
     cur.update({k: v for k, v in new.items() if v not in (None, '')})
     pref.value = cur
     pref.save()
     return get_settings()
+
+
+def compute_notify_hours(s: dict) -> list[int]:
+    """Given settings dict, return the list of hour-of-day values where notify cron fires.
+    Caps hours at 23 — entries that would overflow are dropped."""
+    start = max(0, min(23, int(s.get('notify_start_hour', 23))))
+    interval = max(1, min(24, int(s.get('notify_interval_hours', 1))))
+    count = max(0, min(24, int(s.get('notify_count', 1))))
+    hours = []
+    h = start
+    for _ in range(count):
+        if h > 23:
+            break
+        hours.append(h)
+        h += interval
+    return hours
+
+
+def _regenerate_crontab() -> None:
+    """Best-effort: write /etc/cron.d/opic-daily from current settings.
+    Silent no-op when not writable (host environment, no cron, etc.).
+    cron daemon picks up changes within ~60 seconds."""
+    try:
+        from django.core.management import call_command
+        call_command('write_crontab', verbosity=0)
+    except Exception as e:
+        logger.info(f'crontab regen skipped: {e}')
+
 
 logger = logging.getLogger(__name__)
 
@@ -146,7 +178,6 @@ def _extract_json(raw: str):
     try:
         return json.loads(candidate), None
     except json.JSONDecodeError:
-        # Attempt repair: smart quotes, trailing commas
         repaired = (
             candidate
             .replace('“', '"').replace('”', '"')
@@ -207,9 +238,8 @@ def feedback(request):
 def settings_view(request):
     if request.method == 'GET':
         s = get_settings()
-        # mask app password — only indicate set/unset
-        s['gmail_app_password_set'] = bool(s.get('gmail_app_password'))
-        s['gmail_app_password'] = ''
+        # Surface the computed schedule so the UI can show a preview
+        s['notify_hours_preview'] = compute_notify_hours(s)
         # tunnel URL
         from pathlib import Path
         from django.conf import settings as ds
@@ -226,12 +256,24 @@ def settings_view(request):
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     to_save = {}
-    for k in ['notify_email_to', 'notify_email_from', 'notify_from_name', 'site_url', 'gmail_user', 'ntfy_topic']:
+    for k in ['site_url', 'ntfy_topic']:
         if k in data:
             to_save[k] = str(data[k]).strip()
-    # Only update app password if user provided a non-empty value
-    if data.get('gmail_app_password'):
-        to_save['gmail_app_password'] = str(data['gmail_app_password']).strip()
+    # Notify schedule: integers, validated
+    int_fields = {
+        'notify_start_hour': (0, 23),
+        'notify_interval_hours': (1, 24),
+        'notify_count': (0, 24),
+    }
+    for k, (lo, hi) in int_fields.items():
+        if k in data:
+            try:
+                v = int(data[k])
+            except (TypeError, ValueError):
+                return JsonResponse({'error': f'{k} must be an integer'}, status=400)
+            if v < lo or v > hi:
+                return JsonResponse({'error': f'{k} must be between {lo} and {hi}'}, status=400)
+            to_save[k] = v
     if 'opic_selected_topics' in data:
         raw = data['opic_selected_topics']
         if not isinstance(raw, list):
@@ -243,67 +285,57 @@ def settings_view(request):
             if sv and sv not in seen:
                 seen.add(sv)
                 cleaned.append(sv)
-        if len(cleaned) > 50:
+        if len(cleaned) > 100:
             return JsonResponse({'error': 'too many topics'}, status=400)
         to_save['opic_selected_topics'] = cleaned
     s = save_settings(to_save)
-    s['gmail_app_password_set'] = bool(s.get('gmail_app_password'))
-    s['gmail_app_password'] = ''
+    # Re-emit cron file whenever schedule fields changed
+    if any(k in to_save for k in int_fields):
+        _regenerate_crontab()
+    s['notify_hours_preview'] = compute_notify_hours(s)
     return JsonResponse(s)
 
 
 @csrf_exempt
 @require_http_methods(['POST'])
-def test_email(request):
-    """현재 저장된 설정으로 테스트 이메일 발송.
-    Gmail SMTP 정보 있으면 그걸로, 없으면 direct MX."""
-    from .mailer import send_alert, MailerError
-    from .email_template import build_email
+def test_notify(request):
+    """현재 저장된 ntfy 토픽으로 테스트 푸시 발송."""
+    from .mailer import send_via_ntfy, MailerError
 
     s = get_settings()
-    to_email = (s.get('notify_email_to') or '').strip()
     ntfy_topic = (s.get('ntfy_topic') or '').strip()
-    if not to_email and not ntfy_topic:
-        return JsonResponse({'error': '수신자 이메일 또는 ntfy 토픽을 먼저 설정하세요'}, status=400)
-
-    from_name = (s.get('notify_from_name') or '매일 영어').strip()
-    site_url = (s.get('site_url') or 'http://localhost:8000').rstrip('/')
+    if not ntfy_topic:
+        return JsonResponse({'error': 'ntfy 토픽을 먼저 설정하세요'}, status=400)
 
     # tunnel URL 우선
     from pathlib import Path
     from django.conf import settings as ds
+    site_url = (s.get('site_url') or 'http://localhost:8000').rstrip('/')
     tunnel_file = Path(ds.BASE_DIR) / 'data' / 'tunnel_url.txt'
     if tunnel_file.exists():
         url = tunnel_file.read_text().strip()
         if url:
             site_url = url
 
-    subject, text_body, html_body = build_email(
-        site_url=site_url,
-        status={'has_diary': False, 'has_opic': False},
-    )
-
     try:
-        result = send_alert(
-            settings=s,
-            to_email=to_email,
-            from_name=from_name,
-            subject='[테스트] ' + subject,
-            body_text=text_body,
-            body_html=html_body,
+        result = send_via_ntfy(
+            topic=ntfy_topic,
+            title='🌙 매일 영어 — 테스트 알림',
+            message='ntfy 알림이 정상 동작합니다 ✨',
             click_url=site_url,
+            tags=['white_check_mark'],
         )
         return JsonResponse({
             'status': 'sent',
-            'to': result.get('topic') or to_email,
-            'method': result['method'],
+            'topic': result['topic'],
+            'method': 'ntfy',
             'via': result['host'],
         })
     except MailerError as e:
         return JsonResponse({'error': str(e), 'type': 'mailer_error'}, status=500)
     except Exception as e:
         import traceback
-        logger.exception('test_email unexpected error')
+        logger.exception('test_notify unexpected error')
         return JsonResponse({
             'error': f'{type(e).__name__}: {e}',
             'type': 'internal_error',

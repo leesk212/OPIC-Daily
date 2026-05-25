@@ -1,35 +1,46 @@
 """
-Daily reminder — Python이 수신자 도메인으로 direct send (Gmail SMTP 불필요).
+오늘 일기/Opic 안 했으면 ntfy.sh 푸시 알림 발송.
 
-읽는 설정 우선순위:
-  1. data/tunnel_url.txt (cloudflared가 띄운 URL — 있으면 site_url로 사용)
-  2. DB Preference (WebUI에서 저장한 값)
-  3. .env (NOTIFY_EMAIL 등)
+설정 우선순위:
+  1. data/tunnel_url.txt (cloudflared가 띄운 URL — site_url로 사용)
+  2. DB Preference (WebUI에서 저장)
+  3. .env
   4. Defaults
 
 Usage:
     python manage.py notify              # 평소 알림
-    python manage.py notify --force      # 이미 다 했어도 전송
+    python manage.py notify --force      # 이미 다 했어도 강제 전송
     python manage.py notify --dry-run    # 미리보기만
 """
+import random
 from datetime import date
 from pathlib import Path
 
 from django.conf import settings as django_settings
 from django.core.management.base import BaseCommand
 
-from api.email_template import build_email
-from api.mailer import send_alert, MailerError
+from api.mailer import send_via_ntfy, MailerError
 from api.models import Entry
 from api.views import get_settings
 
 
+FLAVORS = [
+    '오늘 영어 한 줄, 내일의 나에게 선물 ✨',
+    '5문장만 쓰면 오늘도 streak 살아있어요 🔥',
+    '1분만 투자하면 끝나요. 지금 가요 🚀',
+    '잠들기 전 영어 한 입 🍪',
+    '오늘 빠지면 내일 두 배. 지금이 편해요 😉',
+    '탁월은 매일 하는 사람의 것 🌟',
+    'Done is better than perfect. 일단 가요!',
+]
+
+
 class Command(BaseCommand):
-    help = "Send 'come learn now' email via direct MX (no Gmail SMTP needed)"
+    help = "Send 'come learn now' ntfy push notification"
 
     def add_arguments(self, parser):
         parser.add_argument('--force', action='store_true', help='이미 완료해도 강제 전송')
-        parser.add_argument('--dry-run', action='store_true', help='실제 전송하지 않고 미리보기')
+        parser.add_argument('--dry-run', action='store_true', help='실제 전송 없이 미리보기')
 
     def handle(self, *args, **options):
         today_str = date.today().isoformat()
@@ -48,12 +59,11 @@ class Command(BaseCommand):
                 self.stdout.write(f'🌐 tunnel URL 사용: {url}')
 
         site_url = (s.get('site_url') or 'http://localhost:8000').rstrip('/')
-        to_email = s.get('notify_email_to', '').strip()
-        from_name = s.get('notify_from_name', '').strip() or '매일 영어'
+        ntfy_topic = (s.get('ntfy_topic') or '').strip()
 
-        if not to_email:
+        if not ntfy_topic:
             self.stdout.write(self.style.ERROR(
-                '⚠️  수신자(notify_email_to) 설정 누락. WebUI ⚙️ 또는 .env에서 채워주세요.'
+                '⚠️  ntfy_topic 설정 누락. WebUI ⚙️에서 토픽을 먼저 설정하세요.'
             ))
             return
 
@@ -61,39 +71,36 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('✅ 오늘 둘 다 완료. 알림 안 보냄.'))
             return
 
-        subject, text_body, html_body = build_email(
-            site_url=site_url,
-            status={'has_diary': has_diary, 'has_opic': has_opic},
-        )
+        if has_diary and has_opic:
+            status_line = '✅ 오늘 일기+Opic 둘 다 완료 (강제 알림)'
+        elif has_diary:
+            status_line = '📝 일기 완료 / 🎤 Opic 미완료'
+        elif has_opic:
+            status_line = '🎤 Opic 완료 / 📝 일기 미완료'
+        else:
+            status_line = '☐ 일기 + ☐ Opic 둘 다 미완료'
+
+        title = '🌙 오늘의 영어 시간'
+        message = f'{random.choice(FLAVORS)}\n{status_line}'
 
         if options['dry_run']:
             self.stdout.write('=== DRY RUN ===')
-            self.stdout.write(f'To: {to_email}')
-            self.stdout.write(f'From name: {from_name}')
-            self.stdout.write(f'Subject: {subject}')
-            if s.get('ntfy_topic'):
-                method = f'ntfy (topic: {s.get("ntfy_topic")})'
-            elif s.get('gmail_app_password'):
-                method = 'gmail_smtp'
-            else:
-                method = 'direct_mx'
-            self.stdout.write(f'Method: {method}')
-            self.stdout.write('--- TEXT ---')
-            self.stdout.write(text_body)
+            self.stdout.write(f'ntfy topic: {ntfy_topic}')
+            self.stdout.write(f'click URL: {site_url}')
+            self.stdout.write(f'title: {title}')
+            self.stdout.write(f'message: {message}')
             return
 
         try:
-            result = send_alert(
-                settings=s,
-                to_email=to_email,
-                from_name=from_name,
-                subject=subject,
-                body_text=text_body,
-                body_html=html_body,
+            result = send_via_ntfy(
+                topic=ntfy_topic,
+                title=title,
+                message=message,
                 click_url=site_url,
+                tags=['books'],
             )
             self.stdout.write(self.style.SUCCESS(
-                f'✅ 발송 완료 (method={result["method"]}, via={result["host"]})'
+                f'✅ ntfy 발송 완료 → topic={result["topic"]}'
             ))
         except MailerError as e:
             self.stdout.write(self.style.ERROR(f'❌ 발송 실패: {e}'))

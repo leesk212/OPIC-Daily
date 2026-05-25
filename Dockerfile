@@ -33,12 +33,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# System crontab (runs as root, includes user field)
-COPY docker/crontab /etc/cron.d/opic-daily
-RUN chmod 0644 /etc/cron.d/opic-daily \
-    && touch /var/log/cron.log
-
-RUN mkdir -p /app/data /root/.claude
+# Crontab is generated at runtime by `manage.py write_crontab` (entrypoint).
+# Just create the file and the data/auth dirs.
+RUN touch /etc/cron.d/opic-daily \
+    && chmod 0644 /etc/cron.d/opic-daily \
+    && mkdir -p /app/data /root/.claude
 
 EXPOSE 8000
 

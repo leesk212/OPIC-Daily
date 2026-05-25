@@ -342,6 +342,118 @@
     font-size: 12.5px;
   }
 
+  /* ===== Tip Carousel (themed per panel) ===== */
+  .tips-panel.opic  { --tip-color: var(--opic);   --tip-color-soft: var(--opic-soft); }
+  .tips-panel.diary { --tip-color: var(--accent); --tip-color-soft: var(--accent-soft); }
+
+  .tip-carousel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .tip-counter {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .tip-counter strong { color: var(--tip-color); font-weight: 700; }
+  .tip-random-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tip-random-btn:hover {
+    background: var(--card-2);
+    color: var(--tip-color);
+    border-color: var(--tip-color);
+  }
+  .tip-card {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--tip-color);
+    border-radius: 12px;
+    padding: 18px 20px;
+    min-height: 240px;
+    animation: tipFade 0.22s ease;
+  }
+  @keyframes tipFade {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .tip-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--tip-color);
+    margin-bottom: 6px;
+  }
+  .tip-card-sub {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .tip-card-body {
+    font-size: 13.5px;
+    line-height: 1.7;
+    color: var(--text-2);
+  }
+  .tip-card-body strong { color: var(--text); }
+  .tip-card-body em { color: var(--text-2); font-style: italic; }
+  .tip-card-body code {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 12.5px;
+    color: var(--text);
+  }
+  .tip-card-body ul, .tip-card-body ol {
+    margin: 6px 0 10px;
+    padding-left: 20px;
+  }
+  .tip-card-body li { margin-bottom: 5px; }
+  .tip-card-body .tips-example {
+    margin-top: 10px;
+    background: var(--card);
+  }
+  .tip-card-body .tips-good { color: var(--success); }
+  .tip-card-body .tips-bad  { color: var(--danger); margin-bottom: 4px; }
+  .tip-carousel-nav {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .tip-nav-btn {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tip-nav-btn:hover {
+    background: var(--card-2);
+    border-color: var(--muted);
+    color: var(--text);
+  }
+  .tip-nav-btn.primary {
+    background: var(--tip-color-soft);
+    border-color: var(--tip-color);
+    color: var(--tip-color);
+  }
+  .tip-nav-btn.primary:hover { filter: brightness(1.15); }
+
   /* Mini jandi on dashboard */
   .mini-activity {
     margin-bottom: 28px;
@@ -2276,132 +2388,38 @@
     </div>
 
     <div class="tips-panel diary active" id="tips-panel-diary">
-      <div class="tips-intro">💡 <strong>더 잘 쓰는 5가지</strong> — 매일 한 가지씩 시도해보기</div>
+      <div class="tip-carousel-header">
+        <span class="tip-counter">Tip <strong id="diary-tip-current">1</strong> / <span id="diary-tip-total">16</span></span>
+        <button class="tip-random-btn" id="diary-tip-random">🎲 랜덤</button>
+      </div>
 
-      <ol>
-        <li>
-          <strong>주제 먼저 잡기</strong><br>
-          오늘 하루에서 가장 인상 깊었던 <strong>한 가지</strong>에 집중하세요. 거창할 필요 없고, 작은 순간이 오히려 좋아요. 여러 개를 나열하기보다 <strong>하나를 깊게</strong>.
-          <div class="tips-example">
-            <div class="tips-example-label">좋은 주제 예시</div>
-            ☕ 오랜만에 간 카페의 햇살 · 🚶 퇴근길 산책 5분 · 🍱 점심 메뉴 고민 · 📞 친구와의 짧은 통화 · 🎵 출근길에 들은 노래 한 곡
-          </div>
-        </li>
+      <div class="tip-card" id="diary-tip-card"></div>
 
-        <li>
-          <strong>구체적 디테일 추가</strong><br>
-          막연한 "좋았다/슬펐다" 대신 <strong>언제·어디서·누구와·무엇을·왜</strong>를 넣어요. 구체적일수록 글이 살아납니다.
-          <div class="tips-example">
-            <div class="tips-example-label">비교 예시</div>
-            <div class="tips-bad">❌ I went out today and it was nice.</div>
-            <div class="tips-good">✅ After work around 7 PM, I walked alone at Seokchon Lake. The sky was orange and a soft breeze made me feel calm.</div>
-          </div>
-        </li>
+      <div class="tip-carousel-nav">
+        <button class="tip-nav-btn" id="diary-tip-prev">◀ 이전</button>
+        <button class="tip-nav-btn primary" id="diary-tip-next">다음 ▶</button>
+      </div>
 
-        <li>
-          <strong>감정·반응 표현 넣기</strong><br>
-          사건만 적지 말고 <strong>"내가 어떻게 느꼈는지"</strong>를 한두 줄 끼워 넣어요. 영어 일기의 핵심은 '감정의 흐름'.
-          <div class="tips-example">
-            <div class="tips-example-label">자주 쓰는 감정 패턴</div>
-            • <em>I felt relaxed / refreshed / proud / a little nervous</em><br>
-            • <em>It made me think about ~</em><br>
-            • <em>It reminded me of ~</em><br>
-            • <em>I was surprised that ~</em>
-          </div>
-        </li>
-
-        <li>
-          <strong>연결어로 흐름 만들기</strong><br>
-          문장을 점프하지 말고 <strong>이유/대조/순서</strong>를 묶어주는 단어 넣기. 문장 하나하나 따로 떨어져 있으면 어색하고, 묶이면 자연스러워요.
-          <div class="tips-example">
-            <div class="tips-example-label">상황별 연결어</div>
-            • 이유: <code>because</code> · <code>since</code> · <code>so</code><br>
-            • 대조: <code>however</code> · <code>but</code> · <code>although</code><br>
-            • 순서: <code>first</code> · <code>then</code> · <code>after that</code> · <code>finally</code><br>
-            • 예시: <code>for example</code> · <code>like</code>
-          </div>
-        </li>
-
-        <li>
-          <strong>마무리 한 줄 — 회고 또는 다짐</strong><br>
-          마지막에 <strong>오늘에서 무엇을 느꼈는지 / 내일 어떻게 하고 싶은지</strong> 한 줄. 평범한 일기를 한 단계 위로 끌어올리는 마법의 한 문장.
-          <div class="tips-example">
-            <div class="tips-example-label">마무리 템플릿</div>
-            • <em>I realized that ~</em> <span class="tips-quote">("I realized that even a short walk can change my mood.")</span><br>
-            • <em>I'm going to ~ tomorrow</em> <span class="tips-quote">("I'm going to wake up earlier tomorrow.")</span><br>
-            • <em>It was a small moment, but ~</em> <span class="tips-quote">("It was a small moment, but it really mattered.")</span>
-          </div>
-        </li>
-      </ol>
-
-      <div class="tips-pro">
-        💡 처음엔 다 못 챙겨도 OK. <strong>하나씩 늘려가면 한 달 뒤 글이 달라져요.</strong>
+      <div class="tips-pro" style="margin-top:14px;">
+        💡 <strong>영어일기 = "쓰기 연습"이 아니라 "말하기 재료 만들기"</strong> — 매 방문마다 팁 1개씩 익혀가요.
       </div>
     </div>
 
     <div class="tips-panel opic" id="tips-panel-opic">
-      <div class="tips-intro">🎯 <strong>AL 답변 핵심 5가지</strong> — 유창함 &gt; 어려운 단어</div>
+      <div class="tip-carousel-header">
+        <span class="tip-counter">Tip <strong id="opic-tip-current">1</strong> / <span id="opic-tip-total">18</span></span>
+        <button class="tip-random-btn" id="opic-tip-random">🎲 랜덤</button>
+      </div>
 
-      <ol>
-        <li>
-          <strong>Main Point 먼저 말하기</strong><br>
-          첫 문장에 <strong>"내 답의 핵심"</strong>을 박아넣어요. 뜸 들이면 IM, 바로 답하면 IH/AL. 준비 시간에 <strong>결론부터</strong> 떠올리는 연습.
-          <div class="tips-example">
-            <div class="tips-example-label">강력한 오프닝</div>
-            • <em>Well, I would say I really like ~</em><br>
-            • <em>Honestly, the first thing that comes to mind is ~</em><br>
-            • <em>I think one of my favorite ~ is ~</em><br>
-            • <em>For me, ~ is something I do almost every day.</em>
-          </div>
-        </li>
+      <div class="tip-card" id="opic-tip-card"></div>
 
-        <li>
-          <strong>What / Feeling / Why 묶어서 초반에</strong><br>
-          Main Point 직후 3가지 정보를 한 묶음으로: <strong>뭐(What) · 어떻게 느끼는지(Feeling) · 왜(Why)</strong>. 이 패턴만 잡혀도 답변이 구조적으로 들려요.
-          <div class="tips-example">
-            <div class="tips-example-label">템플릿</div>
-            <div class="tips-good">"Well, I really love walking at Seokchon Lake <strong>[What]</strong>. It helps me relax <strong>[Feeling]</strong> because I can clear my mind after a long day <strong>[Why]</strong>."</div>
-          </div>
-        </li>
+      <div class="tip-carousel-nav">
+        <button class="tip-nav-btn" id="opic-tip-prev">◀ 이전</button>
+        <button class="tip-nav-btn primary" id="opic-tip-next">다음 ▶</button>
+      </div>
 
-        <li>
-          <strong>자연스러운 필러 사용</strong><br>
-          침묵하는 것보다 필러 한두 단어가 훨씬 자연스러워요. 외운 티 빼고 <strong>친구랑 얘기하는 느낌</strong>으로. 단, 같은 필러를 반복하면 어색하니 섞어쓰기.
-          <div class="tips-example">
-            <div class="tips-example-label">상황별 필러</div>
-            • 시간 벌기: <code>Well, ...</code> · <code>Let me think...</code> · <code>That's a good question.</code><br>
-            • 의견 시작: <code>Honestly, ...</code> · <code>I would say ~</code> · <code>To be honest, ~</code><br>
-            • 덧붙이기: <code>You know, ~</code> · <code>I mean, ~</code> · <code>The thing is, ~</code>
-          </div>
-        </li>
-
-        <li>
-          <strong>시제 다양하게 섞기</strong><br>
-          한 가지 시제만 쓰면 IM2~IM3. <strong>과거 경험 + 현재 습관 + (미래 계획)</strong>을 섞으면 IH/AL이 보입니다. 특히 "memorable experience" 질문은 과거형이 자연스러워야 해요.
-          <div class="tips-example">
-            <div class="tips-example-label">시제 믹스 예시</div>
-            • 과거: <em>Last weekend, I went to the park with my friend.</em><br>
-            • 현재 습관: <em>I usually go there after work.</em><br>
-            • 현재 완료: <em>I have been going there more often these days.</em><br>
-            • 미래: <em>I'm planning to visit again this weekend.</em>
-          </div>
-        </li>
-
-        <li>
-          <strong>Wrap-up — 끝맺음 한 줄</strong><br>
-          답변을 그냥 멈추지 말고 <strong>"그래서 이게 나한테 의미가 있다"</strong>는 마무리 한 줄. 면접관에게 "끝났다"는 신호를 주는 동시에 답변이 완결됩니다.
-          <div class="tips-example">
-            <div class="tips-example-label">자주 쓰는 wrap-up</div>
-            • <em>So overall, ~</em> <span class="tips-quote">("So overall, it's a big part of my life.")</span><br>
-            • <em>So that's why I like ~</em> <span class="tips-quote">("So that's why I really enjoy walking.")</span><br>
-            • <em>That's why it means a lot to me.</em><br>
-            • <em>It's not a big deal, but it's meaningful to me.</em>
-          </div>
-        </li>
-      </ol>
-
-      <div class="tips-pro">
-        🎯 <strong>AL = 친구에게 말하듯 자연스럽게 + 구조적으로.</strong> 어려운 단어는 함정이에요.
+      <div class="tips-pro" style="margin-top:14px;">
+        🎯 <strong>AL = 어려운 영어가 아니라 쉬운 영어를 자연스럽고 논리적으로 오래 말하는 것.</strong> 매 방문마다 팁 1개씩 익혀가요.
       </div>
     </div>
   </div>
@@ -2430,13 +2448,9 @@
       <div id="opic-topic-msg" style="margin-top:8px; font-size:12px; color:var(--muted); min-height:18px;"></div>
     </div>
 
-    <div style="font-size:12px; color:var(--muted); line-height:1.6; margin-bottom:16px;">
-      매일 23시(KST) 알림. 우선순위: <strong style="color:var(--opic);">ntfy.sh 푸시</strong> → <strong style="color:var(--accent);">Gmail SMTP</strong> → Direct MX
-    </div>
-
     <div style="border-left:3px solid var(--opic); padding:14px 16px; background:var(--opic-soft); border-radius:8px; margin-bottom:18px;">
       <div style="font-size:11px; color:var(--opic); font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px;">
-        ⚡ ntfy.sh 푸시 (가장 간단 · 추천)
+        ⚡ ntfy.sh 푸시 알림
       </div>
       <div style="font-size:12px; color:var(--text-2); line-height:1.65; margin-bottom:12px;">
         가입/인증 불필요. 토픽 이름만 정하고 휴대폰 ntfy 앱에서 같은 이름 구독하면 끝.
@@ -2452,65 +2466,46 @@
       </div>
     </div>
 
-    <div class="settings-row">
-      <label>📨 수신자 이메일 (이메일 알림용)</label>
-      <input type="email" id="set-email-to" placeholder="leesk212@gmail.com">
-    </div>
-
-    <div class="settings-row">
-      <label>📛 발신자 이름</label>
-      <input type="text" id="set-from-name" placeholder="매일 영어">
-    </div>
-
-    <div style="border-top:1px solid var(--border); padding-top:16px; margin-top:18px;">
-      <div style="font-size:11px; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;">
-        ✉️ Gmail SMTP (실제 이메일 받고 싶을 때)
+    <!-- ===== 알림 스케줄 (cron) ===== -->
+    <div style="border-left:3px solid var(--accent); padding:14px 16px; background:var(--accent-soft); border-radius:8px; margin-bottom:18px;">
+      <div style="font-size:11px; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px;">
+        🕐 알림 스케줄 (Asia/Seoul · 24h)
       </div>
-
-      <div class="settings-row">
-        <label>본인 Gmail 주소</label>
-        <input type="email" id="set-gmail-user" placeholder="your-gmail@gmail.com">
+      <div style="font-size:12px; color:var(--text-2); line-height:1.65; margin-bottom:12px;">
+        하루 몇 시부터, 몇 시간 간격으로, 몇 번 알림 받을지. 저장하면 컨테이너 안 cron이 자동 갱신돼요.
       </div>
-
-      <div class="settings-row">
-        <label>🔑 Gmail 앱 비밀번호</label>
-        <input type="password" id="set-gmail-pass" placeholder="새로 입력 (비우면 기존값 유지)">
-        <div class="hint" id="gmail-pass-status">
-          <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:var(--accent);">앱 비밀번호 만들기</a> → 생성된 16자리 비밀번호 입력
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+        <div class="settings-row" style="margin:0;">
+          <label>시작 시각 (0–23)</label>
+          <input type="number" id="set-notify-start-hour" min="0" max="23" step="1" value="23">
+        </div>
+        <div class="settings-row" style="margin:0;">
+          <label>간격 (시간)</label>
+          <input type="number" id="set-notify-interval-hours" min="1" max="24" step="1" value="1">
+        </div>
+        <div class="settings-row" style="margin:0;">
+          <label>횟수</label>
+          <input type="number" id="set-notify-count" min="0" max="24" step="1" value="1">
         </div>
       </div>
-    </div>
-
-    <div style="border-top:1px solid var(--border); padding-top:16px; margin-top:18px;">
-      <div style="font-size:11px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;">
-        ⚙️ Direct MX 발신자 (Gmail SMTP 안 쓸 때만)
-      </div>
-      <div class="settings-row">
-        <label>발신자 이메일 (보일 주소)</label>
-        <input type="email" id="set-email-from" placeholder="opic-daily@your-mac.local">
-        <div class="hint">비우면 자동으로 <code>opic-daily@hostname</code>이 됩니다.</div>
-      </div>
+      <div id="notify-hours-preview" style="margin-top:10px; font-size:12.5px; color:var(--accent); font-weight:600;"></div>
+      <div style="margin-top:6px; font-size:11px; color:var(--muted);">횟수=0 이면 알림 비활성화. 24시 넘어가는 시간은 자동 제외.</div>
     </div>
 
     <div class="settings-row" style="margin-top:18px;">
-      <label>🌐 사이트 URL (알림 메시지 링크)</label>
+      <label>🌐 사이트 URL (알림 클릭 시 열림)</label>
       <input type="url" id="set-site-url" placeholder="http://localhost:8000">
       <div class="hint" id="tunnel-hint">
-        <code>./tunnel.sh</code>를 실행하면 트라이클라우드플레어 URL이 자동으로 여기에 표시됩니다.
+        Docker로 실행하면 컨테이너 안 <code>cloudflared</code>가 자동으로 URL을 띄워서 여기에 표시합니다.
       </div>
     </div>
 
     <div class="settings-actions">
-      <button class="ghost-btn" id="settings-test">📧 테스트 이메일</button>
+      <button class="ghost-btn" id="settings-test">📲 테스트 알림</button>
       <button class="primary-btn" id="settings-save">💾 저장</button>
     </div>
 
     <div class="settings-result" id="settings-result" hidden></div>
-
-    <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border); font-size:11px; color:var(--muted); line-height:1.6;">
-      💡 매일 23시 자동 알림: 터미널에서 <code style="background:var(--card-2); padding:1px 5px; border-radius:3px;">crontab -e</code> 후 다음 줄 추가:
-      <pre style="background:var(--bg); padding:8px 10px; border-radius:6px; margin-top:6px; font-size:11px; overflow:auto;">0 23 * * * /Users/danny/Desktop/mini-proj/opic-daily/run-notify.sh</pre>
-    </div>
   </div>
 </div>
 
@@ -5231,9 +5226,683 @@ Now output ONLY the JSON object:`;
   document.getElementById('export-data').addEventListener('click', exportData);
   document.getElementById('import-data').addEventListener('click', importData);
 
-  // Tips modal
+  // ============ Tips modal + OPIc tip carousel ============
+  const OPIC_TIPS = [
+    {
+      title: "AL의 핵심은 영어 실력보다 운영 능력",
+      sub: "어려운 단어를 많이 쓰는 시험이 아니다",
+      body: `AL 답변은 이렇게 들려야 해요:<br><em>"질문을 정확히 이해했고, 내 생각을 자연스럽게 말할 수 있으며, 경험과 감정을 섞어서 대화하듯 설명할 수 있다."</em>
+      <div class="tips-example">
+        <div class="tips-example-label">AL의 5가지 조건</div>
+        1. Main Point가 빠르다<br>
+        2. 끊기지 않고 자연스럽게 말한다<br>
+        3. 시제가 안정적이다<br>
+        4. 개인 경험처럼 들린다<br>
+        5. 답변이 구조적으로 전개된다
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">❌ AL을 방해하는 답변</div>
+        외운 스크립트처럼 들림 · 시제가 흔들림 · 길게 말하지만 핵심 없음 · 어려운 단어 쓰다가 흐름 끊김 · 한국어를 그대로 영어로 옮긴 느낌
+      </div>`
+    },
+    {
+      title: "AL 답변의 기본 흐름",
+      sub: "어떤 질문이 와도 이 순서로",
+      body: `<strong>Intro → Main Point → What/Feeling/Why → Detail → Example → Lesson → Summary</strong>
+      <div class="tips-example">
+        <div class="tips-example-label">최종 공식</div>
+        <em>Well, when it comes to [topic], I would say [main point].<br>
+        I feel [emotion] about it because [reason].<br>
+        For example, [personal example].<br>
+        At that time, I felt [emotion].<br>
+        Because of that, I realized [lesson].<br>
+        So overall, [summary].</em>
+      </div>
+      어떤 주제가 나와도 이 틀에 끼워넣을 수 있어요. <strong>문장이 아니라 흐름을 외우세요.</strong>`
+    },
+    {
+      title: "첫 문장은 무조건 쉽게 시작",
+      sub: "시험장에서 가장 위험한 순간",
+      body: `첫 문장을 어렵게 시작하려고 하면 전체 답변이 흔들려요. <strong>항상 쉬운 패턴</strong>으로 시작.
+      <div class="tips-example">
+        <div class="tips-example-label">✅ 좋은 시작</div>
+        • <em>Well, when it comes to [topic], I would say...</em><br>
+        • <em>Well, to be honest, I really like...</em><br>
+        • <em>Actually, I don't know much about it, but I can say...</em><br>
+        • <em>Honestly, this question reminds me of...</em><br>
+        • <em>Well, I think it depends, but in my case...</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">❌ 피해야 할 시작</div>
+        <span class="tips-bad">There are many kinds of...</span>
+        <span class="tips-bad">Nowadays, people usually...</span>
+        <span class="tips-bad">I have many experiences about...</span>
+        <span class="tips-bad">I will explain about...</span>
+        → 너무 교과서적이고 외운 느낌이 강함
+      </div>`
+    },
+    {
+      title: "Main Point: What / Feeling / Why",
+      sub: "이 3가지를 묶어서 초반에",
+      body: `Main Point 직후 <strong>뭐(What) · 어떻게 느끼는지(Feeling) · 왜(Why)</strong>를 한 묶음으로. 이 3문장만 잡아도 답변이 구조적으로 들려요.
+      <div class="tips-example">
+        <div class="tips-example-label">템플릿</div>
+        <div class="tips-good">"Well, I really love walking at Seokchon Lake <strong>[What]</strong>. It helps me relax <strong>[Feeling]</strong> because I can clear my mind after a long day <strong>[Why]</strong>."</div>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">공원 주제 예시</div>
+        <em>Well, I usually go for a walk at the park near my house. <strong>(What)</strong><br>
+        I feel really relaxed when I walk there. <strong>(Feeling)</strong><br>
+        That's because I can get some fresh air and clear my mind. <strong>(Why)</strong></em>
+      </div>`
+    },
+    {
+      title: "40초 답변 템플릿",
+      sub: "묘사·습관·취향 문제용",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">7문장 구조</div>
+        1. <em>Well, when it comes to [topic], I would say [main point].</em><br>
+        2. <em>I personally feel [feeling] about it.</em><br>
+        3. <em>The main reason is that [reason].</em><br>
+        4. <em>For example, [specific example].</em><br>
+        5. <em>At that time, I felt [emotion].</em><br>
+        6. <em>So overall, [summary].</em><br>
+        7. <em>That's why [final point].</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">예시 — "What kind of music do you like?"</div>
+        <div class="tips-good">Well, when it comes to music, I would say I really like hip-hop. I personally feel relaxed and energized when I listen to it. The main reason is that hip-hop has a strong beat, so it helps me change my mood quickly. For example, when I finish work and feel tired, I usually listen to hip-hop on my way home. At that time, I feel like my stress goes away little by little. So overall, hip-hop is not just music for me. It is something that helps me refresh my mind, for sure.</div>
+      </div>`
+    },
+    {
+      title: "1분 답변 템플릿",
+      sub: "과거 경험·기억·비교 문제용",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">10문장 구조</div>
+        1. <em>Well, this question reminds me of one experience.</em><br>
+        2. <em>It happened when [time].</em><br>
+        3. <em>At that time, I [past action].</em><br>
+        4. <em>Honestly, I felt [emotion].</em><br>
+        5. <em>The reason was that [reason].</em><br>
+        6. <em>One thing I remember clearly is that [specific detail].</em><br>
+        7. <em>Because of that, I realized [lesson].</em><br>
+        8. <em>Since then, I have tried to [current change].</em><br>
+        9. <em>So, it was a really memorable experience for me.</em><br>
+        10. <em>I still remember it clearly.</em>
+      </div>
+      💡 마지막 두 문장은 <strong>"끝났다는 신호"</strong> 역할이라 꼭 챙기기.`
+    },
+    {
+      title: "Body 늘리는 5요소",
+      sub: "Body가 안 늘어날 때 이 중 2~3개만",
+      body: `무작정 내용을 많이 만들려고 하면 막혀요. 아래 5가지 중 <strong>2~3개만 골라서</strong> 붙이세요.
+      <div class="tips-example">
+        <div class="tips-example-label">확장 5요소</div>
+        1. <strong>장소</strong> — It is near my house.<br>
+        2. <strong>시간</strong> — I usually go there after work.<br>
+        3. <strong>사람</strong> — I often see families, couples, and people walking their dogs.<br>
+        4. <strong>감정</strong> — It makes me feel calm and refreshed.<br>
+        5. <strong>변화</strong> — These days, I use AI apps to find better routes or check the weather.
+      </div>
+      💡 같은 주제로 답변을 늘릴 때마다 다른 조합을 골라보세요.`
+    },
+    {
+      title: "답이 안 떠오를 때 — 비상 구조",
+      sub: "모른다고 멈추지 말 것",
+      body: `시험장에서 답이 바로 안 떠오르면 이 구조로 도망가요. <strong>모르더라도 쉬운 개인 경험으로 가져가면 됩니다.</strong>
+      <div class="tips-example">
+        <div class="tips-example-label">비상 템플릿</div>
+        <em>Well, honestly, I haven't thought about this topic deeply before.<br>
+        But if I had to say, I would say [simple opinion].<br>
+        The reason is pretty simple.<br>
+        In my case, [personal example].<br>
+        So overall, I think [summary].</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">예시 — "Tell me about a traditional holiday"</div>
+        <div class="tips-good">Well, honestly, I haven't thought about this topic deeply before. But if I had to say, I would talk about Chuseok. The reason is pretty simple. In my case, I usually spend time with my family and eat good food during Chuseok. It is not always super special, but it feels warm and meaningful. So overall, I think Chuseok is a good time to slow down and reconnect with family.</div>
+      </div>`
+    },
+    {
+      title: "묘사 문제 — 정보보다 느낌",
+      sub: "장소·사람·사물·분위기 설명",
+      body: `<strong>너무 객관적으로만 말하면 안 돼요.</strong> AL에서는 "정보"보다 "느낌"이 중요.
+      <div class="tips-example">
+        <div class="tips-example-label">❌ 나쁜 답변</div>
+        <span class="tips-bad">My house has three rooms. There is a living room. There is a kitchen. There is a bathroom.</span>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">✅ 좋은 답변</div>
+        <div class="tips-good">My house is not very big, but it feels comfortable to me. The living room is my favorite place because I can relax there after work. So, even though it is simple, it feels like my own safe place.</div>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">묘사 구조</div>
+        <em>Well, when it comes to [topic], I would say [main description].<br>
+        It is [detail 1], and it has [detail 2].<br>
+        One thing I really like about it is [favorite point].<br>
+        Whenever I [use/go/see/listen to] it, I feel [emotion].<br>
+        So overall, it is [summary].</em>
+      </div>`
+    },
+    {
+      title: "과거 경험 — When/What/Feeling/Lesson",
+      sub: "memorable experience 유형",
+      body: `<strong>과거시제가 핵심.</strong> "언제 / 어디서 / 무엇을 했는지 / 기분 / 깨달음"을 무조건 넣어요.
+      <div class="tips-example">
+        <div class="tips-example-label">과거 경험 템플릿</div>
+        <em>Well, this question reminds me of one experience.<br>
+        It happened when [time]. I was at [place], and I [action].<br>
+        At first, I felt [emotion]. But later, [change].<br>
+        One thing I remember clearly is that [specific detail].<br>
+        Because of that, I realized [lesson].<br>
+        So, it was a really memorable experience for me.</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">자주 쓰는 표현</div>
+        • <em>It happened a few years ago.</em><br>
+        • <em>I still remember it clearly.</em><br>
+        • <em>At first, I was a little nervous.</em><br>
+        • <em>One thing I remember clearly is that...</em><br>
+        • <em>That experience taught me that...</em><br>
+        • <em>Since then, I have tried to...</em>
+      </div>`
+    },
+    {
+      title: "비교 문제 — In the past / These days",
+      sub: "AL에서 가장 중요한 유형",
+      body: `비교 문제는 4가지: <strong>과거 vs 현재 · A vs B · 예전 습관 vs 현재 습관 · 과거 경험 vs 최근 경험</strong>
+      <div class="tips-example">
+        <div class="tips-example-label">과거 vs 현재 템플릿</div>
+        <em>Well, I think [topic] has changed a lot over time.<br>
+        In the past, [past situation]. Back then, I usually [past habit].<br>
+        But these days, [current situation].<br>
+        The biggest difference is that [main difference].<br>
+        Personally, I think this change is [feeling].<br>
+        So overall, [summary].</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">A vs B 템플릿</div>
+        <em>Well, between A and B, I personally prefer A.<br>
+        A is [description], while B is [description].<br>
+        The biggest difference is [difference].<br>
+        In my case, I like A more because [reason].<br>
+        For example, [example]. So overall, A fits me better.</em>
+      </div>`
+    },
+    {
+      title: "AI를 자연스럽게 넣는 법",
+      sub: "과거 vs 현재 비교에서",
+      body: `현재 파트에 AI를 너무 과하게 말하면 부자연스러워요. <strong>이 공식</strong>으로 가볍게 묻어나게.
+      <div class="tips-example">
+        <div class="tips-example-label">기본 공식</div>
+        <em>In the past, I usually did everything by myself.<br>
+        But these days, I sometimes use AI tools to save time and get better ideas.</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">주제별 적용</div>
+        <strong>공부:</strong> <em>In the past, I just studied English with books. But these days, I sometimes use AI tools to practice speaking and fix my sentences.</em><br><br>
+        <strong>여행:</strong> <em>In the past, I searched for travel info by myself. But these days, I use AI tools to find good places, restaurants, and routes.</em><br><br>
+        <strong>집:</strong> <em>In the past, my home was just a place to sleep. But these days, I use smart devices and AI tools, so my home feels more convenient.</em>
+      </div>`
+    },
+    {
+      title: "롤플레이 — 공손하고 자연스럽게",
+      sub: "문법보다 상황 해결 능력",
+      body: `너무 복잡하게 말하지 말고 공손하게. <strong>Greeting → Situation → Request → Option → Closing</strong>
+      <div class="tips-example">
+        <div class="tips-example-label">예약 변경 템플릿</div>
+        <em>Hi, I'm calling about my appointment.<br>
+        I'm sorry, but something came up, so I need to change the time.<br>
+        Is it possible to move it to [new time]?<br>
+        If that doesn't work, I'm also available on [another time].<br>
+        Please let me know what works best. Thank you.</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">유용한 표현</div>
+        • <code>Something came up.</code><br>
+        • <code>Is it possible to...?</code><br>
+        • <code>Could you help me with this?</code><br>
+        • <code>I'm also available on...</code><br>
+        • <code>Please let me know.</code>
+      </div>`
+    },
+    {
+      title: '돌발 문제 — "I don\'t know much, but in my case..."',
+      sub: "모르는 주제가 나와도 당황 X",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">돌발 공식</div>
+        <em>Well, honestly, I don't know much about this topic.<br>
+        But in my case, I can talk about [related personal experience].<br>
+        I remember that [simple example].<br>
+        At that time, I felt [emotion].<br>
+        So, even though I'm not an expert, I think [simple opinion].</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">예시 — "Social issue related to parks"</div>
+        <div class="tips-good">Well, honestly, I don't know much about social issues related to parks. But in my case, I can talk about crowded parks. Sometimes, when the weather is nice, parks get too crowded. For example, at Seokchon Lake Park, many people visit during cherry blossom season. At that time, it can be hard to walk comfortably. So, even though parks are great places, I think crowd control is also important.</div>
+      </div>`
+    },
+    {
+      title: "콤보 대비 — 주제 1개 = 5방향",
+      sub: "오픽은 한 주제로 3문제 콤보",
+      body: `주제 하나를 공부할 때는 반드시 <strong>3~5개 방향</strong>으로 확장하세요.
+      <div class="tips-example">
+        <div class="tips-example-label">주제 확장 5방향</div>
+        1. <strong>Description</strong> — 묘사<br>
+        2. <strong>Habit</strong> — 습관<br>
+        3. <strong>Past experience</strong> — 과거 경험<br>
+        4. <strong>Comparison</strong> — 비교<br>
+        5. <strong>Problem / Issue</strong> — 문제·이슈
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">공원 콤보 예시</div>
+        Q1. Describe a park you like.<br>
+        Q2. Tell me about a memorable experience at a park.<br>
+        Q3. Compare parks in the past and now.
+      </div>`
+    },
+    {
+      title: "재활용 스토리 4개",
+      sub: "주제마다 외우지 말고 묶음으로",
+      body: `모든 주제를 따로 외우지 말고 <strong>재활용 가능한 스토리 묶음</strong>을 만들어요.
+      <div class="tips-example">
+        <div class="tips-example-label">① 퇴근 후 산책 스토리</div>
+        <strong>활용:</strong> Park, Health, Stress, Routine, Weather, Neighborhood<br>
+        <em>"After work, I went for a walk at Seokchon Lake Park. I felt stressed, but walking around the lake helped me clear my mind. Since then, walking has become my small routine."</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">② 음악으로 스트레스 푸는 스토리</div>
+        <strong>활용:</strong> Music, Commute, Stress, Free time, Technology<br>
+        <em>"When I feel tired after work, I usually listen to hip-hop. The strong beat helps me change my mood. These days, music apps recommend songs that match my mood."</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">③ 집에서 쉬는 스토리</div>
+        <strong>활용:</strong> Home, Room, Relaxation, Technology, Past vs now<br>
+        <em>"In the past, my home was just a place to sleep. But these days, I try to make my home more comfortable. I also use AI tools and smart devices."</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">④ 약속·예약 변경 스토리</div>
+        <strong>활용:</strong> Appointment, Role-play, Problem solving, Schedule<br>
+        <em>"Something came up, so I had to change my appointment. I called and asked if I could move it to another time. Luckily, it worked out well."</em>
+      </div>`
+    },
+    {
+      title: "필러 자연스럽게 — 침묵보다 낫다",
+      sub: "단, 같은 필러 반복은 NG",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">상황별 필러</div>
+        <strong>시간 벌기:</strong> <code>Well, ...</code> · <code>Let me think...</code> · <code>That's a good question.</code><br>
+        <strong>의견 시작:</strong> <code>Honestly, ...</code> · <code>To be honest, ~</code> · <code>I would say ~</code><br>
+        <strong>덧붙이기:</strong> <code>You know, ~</code> · <code>I mean, ~</code> · <code>The thing is, ~</code><br>
+        <strong>개인화:</strong> <code>In my case, ~</code> · <code>Personally, ~</code>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">❌ 나쁜 예 (필러 도배)</div>
+        <span class="tips-bad">Well... you know... actually... I mean... well...</span>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">✅ 좋은 예 (자연스럽게 섞기)</div>
+        <div class="tips-good">Well, to be honest, I don't go there often. But when I do, I feel really refreshed.</div>
+      </div>`
+    },
+    {
+      title: "끝맺음 — 자연스럽게 멈추는 법",
+      sub: "딱딱하게 끝내지 말 것",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">좋은 끝맺음 표현</div>
+        • <em>So overall, it's a big part of my life.</em><br>
+        • <em>That's why I enjoy it so much.</em><br>
+        • <em>It's a small thing, but it really helps me.</em><br>
+        • <em>That kind of thing.</em> · <em>Something like that.</em><br>
+        • <em>I guess.</em> · <em>For sure.</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">문장 끝에 붙이기 좋은 말</div>
+        <code>like that</code> · <code>or something</code> · <code>and stuff</code> · <code>and things like that</code> · <code>I guess</code> · <code>for sure</code> · <code>in general</code>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">❌ 피해야 할 표현</div>
+        <span class="tips-bad">and etc · so so · also (문장 끝맺음으로)</span>
+      </div>`
+    },
+  ];
+
+  const DIARY_TIPS = [
+    {
+      title: "영어일기의 진짜 목표",
+      sub: "Writing 공부가 아니라 Speaking 재료 저장소",
+      body: `오픽용 영어일기는 <strong>문법적으로 완벽한 글</strong>을 쓰는 게 목표가 아니에요.
+      <div class="tips-example">
+        <div class="tips-example-label">진짜 목표 5가지</div>
+        1. 오늘 있었던 일을 <strong>영어로 말할 수 있게</strong> 만들기<br>
+        2. 감정과 이유를 영어로 설명하는 습관 만들기<br>
+        3. 과거·현재·현재완료를 자연스럽게 쓰기<br>
+        4. 오픽 답변에 쓸 수 있는 <strong>개인 경험 스토리</strong> 쌓기<br>
+        5. 시험장에서 Body를 빠르게 늘릴 수 있는 <strong>재료</strong> 만들기
+      </div>
+      💡 영어일기는 input이 아니라 <strong>output 준비물</strong>입니다.`
+    },
+    {
+      title: "일기 구조 = 오픽 답변 구조",
+      sub: "같은 흐름을 두 번 연습하는 셈",
+      body: `일기를 오픽 답변 구조 그대로 쓰면 시험장에서 그대로 재생할 수 있어요.
+      <div class="tips-example">
+        <div class="tips-example-label">매핑</div>
+        <strong>일기:</strong> Today, I... → I felt... → because... → One thing I remember... → I realized... → I can use this for...<br><br>
+        <strong>오픽:</strong> Intro → What → Feeling → Why → Example → Lesson → Summary
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">핵심 6요소</div>
+        1. What happened?<br>
+        2. How did I feel?<br>
+        3. Why did I feel that way?<br>
+        4. One detail<br>
+        5. What did I realize?<br>
+        6. How can I connect this to OPIc?
+      </div>`
+    },
+    {
+      title: "매일 쓰는 기본 템플릿",
+      sub: "그대로 채워 넣기만 해도 OK",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">7문장 템플릿</div>
+        <em>Today, I [did something].<br>
+        At first, I felt [emotion].<br>
+        The main reason was that [reason].<br>
+        One thing I remember clearly is that [specific detail].<br>
+        Because of that, I realized that [lesson].<br>
+        So overall, it was [summary].<br>
+        I think I can use this story when I talk about [OPIc topic].</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">예시 — 퇴근 후 산책</div>
+        <div class="tips-good">Today, I went for a walk at Seokchon Lake Park after work. At first, I felt a little tired because I had a busy day. The main reason I went there was that I wanted to clear my mind. One thing I remember clearly is that the weather was cool and many people were walking around the lake. Because of that, I realized that even a short walk can help me feel much better. So overall, it was a simple but relaxing moment. I can use this story for parks, stress, health, routines, or my neighborhood.</div>
+      </div>`
+    },
+    {
+      title: "짧게 써도 OK — 매일이 더 중요",
+      sub: "6~7문장이면 충분",
+      body: `처음부터 길게 쓰려고 하면 오래 못 가요. <strong>매일 쓰는 것</strong>이 길게 쓰는 것보다 100배 중요.
+      <div class="tips-example">
+        <div class="tips-example-label">좋은 영어일기 ≠ 긴 영어일기</div>
+        좋은 영어일기 = <strong>오픽에서 다시 말할 수 있는</strong> 영어일기
+      </div>
+      💡 "오늘 너무 피곤한데..." → 5문장만 쓰고 자도 OK. 0문장보다 5문장이 무한히 좋아요.`
+    },
+    {
+      title: "필수 3요소: 감정·이유·깨달음",
+      sub: "사건만 적으면 IM, 셋 다 있으면 AL",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">① 감정 — 매일 최소 1번</div>
+        • <em>I felt relaxed / tired / proud / a little nervous</em><br>
+        • <em>It made me feel calm.</em><br>
+        • <em>It helped me clear my mind.</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">② 이유 — 항상 because 붙이기</div>
+        • <em>I felt relaxed <strong>because</strong> I could get some fresh air.</em><br>
+        • <em>I felt tired <strong>because</strong> I had a lot of work to do.</em><br>
+        • <em>I felt proud <strong>because</strong> I finished something difficult.</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">③ 깨달음 — 한 줄로 격을 올리기</div>
+        • <em>I realized that small routines are really important.</em><br>
+        • <em>I realized that I need to take breaks more often.</em><br>
+        • <em>I realized that I don't always need something special to feel happy.</em>
+      </div>`
+    },
+    {
+      title: '마지막 한 줄: "I can use this story for..."',
+      sub: "이걸 안 하면 그냥 일기에서 끝나요",
+      body: `영어일기의 마지막은 <strong>항상 이렇게</strong> 끝내세요. 나중에 주제별 스토리 저장소가 됩니다.
+      <div class="tips-example">
+        <div class="tips-example-label">패턴</div>
+        <em>I can use this story for [topic 1], [topic 2], and [topic 3].</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">스토리별 연결 예시</div>
+        <strong>산책:</strong> <em>I can use this story for park, routine, stress, and health.</em><br>
+        <strong>음악:</strong> <em>I can use this story for music, commute, stress, and free time.</em><br>
+        <strong>집:</strong> <em>I can use this story for home, technology, daily routine, and relaxation.</em><br>
+        <strong>친구 통화:</strong> <em>I can use this story for friends, appointment, problem-solving, and role-play.</em>
+      </div>`
+    },
+    {
+      title: "하나의 일기 = 여러 주제 재활용",
+      sub: "주제마다 따로 외우지 마세요",
+      body: `잘 쓴 일기 하나는 <strong>오픽 주제 5~9개</strong>에 동시에 쓸 수 있어요.
+      <div class="tips-example">
+        <div class="tips-example-label">"퇴근 후 석촌호수 산책" → 9개 주제</div>
+        Park · Neighborhood · Health · Stress · Weather · Routine · Memorable experience · Free time · Past experience
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">"음악 들으며 출퇴근" → 7개 주제</div>
+        Music · Commute · Stress · Free time · Technology · Daily routine · Mood
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">"집에서 AI로 영어 공부" → 7개 주제</div>
+        Home · Technology · Study · English · Routine · Past vs now · Change
+      </div>`
+    },
+    {
+      title: "시제 의도적으로 섞기",
+      sub: "한 가지 시제만 쓰면 IM, 섞으면 IH/AL",
+      body: `일기 안에 <strong>과거 + 현재 + 현재완료 + 미래</strong>를 한 번에 연습하세요.
+      <div class="tips-example">
+        <div class="tips-example-label">시제 4종 세트 예시</div>
+        <em><strong>Past:</strong> Today, I went for a walk after work.<br>
+        <strong>Present:</strong> These days, I usually walk when I feel stressed.<br>
+        <strong>Present perfect:</strong> This routine has helped me feel more balanced.<br>
+        <strong>Future:</strong> I think I will keep doing this because it is good for my health.</em>
+      </div>
+      💡 매일 일기에 <strong>4개 시제 중 최소 3개</strong>가 들어가는지 체크하세요.`
+    },
+    {
+      title: "감정 단어 모음 — 쉬운 것 반복",
+      sub: "어려운 단어보다 자연스러운 반복",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">긍정 감정</div>
+        relaxed · refreshed · comfortable · happy · proud · satisfied · calm · peaceful · energized
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">부정 감정</div>
+        tired · stressed · nervous · worried · annoyed · confused · uncomfortable · disappointed
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">감정 확장 표현</div>
+        • <em>I felt a little tired.</em><br>
+        • <em>I felt really relaxed.</em><br>
+        • <em>I felt much better.</em><br>
+        • <em>It made me feel calm.</em><br>
+        • <em>It helped me clear my mind.</em><br>
+        • <em>I was stressed out, but I felt better after that.</em>
+      </div>`
+    },
+    {
+      title: "Speaking으로 바꾸는 3단계",
+      sub: "이게 빠지면 오픽 실력으로 안 이어져요",
+      body: `영어일기를 쓰고 끝내면 안 됩니다. <strong>반드시 말로 바꿔야</strong> 해요.
+      <div class="tips-example">
+        <div class="tips-example-label">3단계 변환법</div>
+        1. <strong>영어일기 쓰기</strong> (3~5분)<br>
+        2. <strong>소리 내서 2번 읽기</strong> (1~2분)<br>
+        3. <strong>안 보고 40초 동안 말하기</strong> (1~2분)
+      </div>
+      💡 마지막 단계가 제일 중요해요. 입으로 안 내면 시험장에서 안 나옵니다.`
+    },
+    {
+      title: "일기 → 오픽 답변 변환 공식",
+      sub: "4문장 일기를 7문장 답변으로",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">원본 일기 (4문장)</div>
+        <em>Today, I went for a walk at Seokchon Lake Park after work. I felt relaxed because I could clear my mind. The weather was cool, and many people were walking around the lake. I realized that a short walk can really help me feel better.</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">→ 오픽 답변 (7문장)</div>
+        <div class="tips-good">Well, this question reminds me of one experience. A few days ago, I went for a walk at Seokchon Lake Park after work. At first, I felt a little tired because I had a busy day. But while I was walking around the lake, I started to feel relaxed. The weather was cool, and many people were enjoying their time there. Because of that, I realized that even a short walk can help me clear my mind. So overall, it was a simple but meaningful experience for me.</div>
+      </div>
+      💡 일기에 <strong>"Well, this question reminds me of..."</strong> + <strong>"A few days ago..."</strong>만 앞에 붙이면 바로 오픽 답변.`
+    },
+    {
+      title: "매일 쓰기 좋은 주제 추천",
+      sub: "특별한 일 없어도 평범한 일상이 OK",
+      body: `오픽에서는 <strong>평범한 일상이 오히려 더 자연스럽게</strong> 들려요.
+      <div class="tips-example">
+        <div class="tips-example-label">일상 주제 10개</div>
+        1. 오늘 출근길<br>
+        2. 퇴근 후 한 일<br>
+        3. 오늘 먹은 음식<br>
+        4. 오늘 들은 음악<br>
+        5. 오늘 본 사람<br>
+        6. 오늘 기분<br>
+        7. 오늘 스트레스 받은 일<br>
+        8. 오늘 좋았던 작은 순간<br>
+        9. 오늘 사용한 앱이나 AI 도구<br>
+        10. 오늘 집에서 쉰 방식
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">오픽 연결 좋은 주제</div>
+        Park · Music · Home · Food · Coffee · Weather · Friends · Work · Transportation · Technology · Health · Routine · Appointment · Problem-solving · Travel
+      </div>`
+    },
+    {
+      title: "난이도별 3버전 — 자기 컨디션 맞게",
+      sub: "오늘은 피곤? Level 1로 일단 쓰기",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">Level 1 — 초간단 5문장</div>
+        <em>Today, I [did something].<br>
+        I felt [emotion].<br>
+        It was because [reason].<br>
+        One thing I remember is [detail].<br>
+        So, it was [summary].</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">Level 2 — 오픽 기본형 7문장 (추천 default)</div>
+        +  <em>Because of that, I realized [lesson].</em><br>
+        +  <em>I can use this story for [OPIc topics].</em>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">Level 3 — AL 목표형 10문장</div>
+        + 시점 (<em>It happened when...</em>)<br>
+        + 관련 연상 (<em>Actually, it reminded me of...</em>)<br>
+        + 현재 변화 (<em>Since then, I have tried to...</em>)
+      </div>`
+    },
+    {
+      title: "추천 최종 포맷 — 5섹션",
+      sub: "Date / Topic / Diary / Connection / Speaking",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">매일 이 포맷으로</div>
+        <strong>📅 Date:</strong> 2026.05.25<br>
+        <strong>🏷 Topic:</strong> Small happiness / Park / Music<br>
+        <strong>📝 Diary:</strong> Today, I ... (7문장)<br>
+        <strong>🎯 OPIc Connection:</strong> I can use this for [topic 1], [topic 2], [topic 3]<br>
+        <strong>🎤 Speaking Version:</strong> Well, this question reminds me of... (말로 다시)
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">실제 예시 — "Small happiness"</div>
+        <div class="tips-good">Today, I had a small but happy moment after work. I was a little tired because I had a busy day. But on my way home, I listened to my favorite music, and it helped me feel better. One thing I remember clearly is that the weather was nice, so the walk felt more relaxing. Because of that, I realized that small things can change my mood. So overall, it was not a special day, but it was still meaningful to me.</div>
+        <strong>→ Connection:</strong> music, stress, routine, commute, small happiness
+      </div>`
+    },
+    {
+      title: "피해야 할 4가지",
+      sub: "이것만 안 해도 일기가 한 단계 좋아짐",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">① 너무 긴 문장</div>
+        <span class="tips-bad">Although I was extremely exhausted due to the overwhelming amount of work that I had to deal with...</span>
+        <div class="tips-good">I was really tired because I had a busy day. So, I decided to take a walk to relieve my stress.</div>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">② 어려운 단어 남발</div>
+        <span class="tips-bad">It was an extraordinarily unforgettable experience.</span>
+        <div class="tips-good">It was really memorable for me.</div>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">③ 사건만 쓰고 감정 X</div>
+        <span class="tips-bad">Today, I went to a cafe. I drank coffee. I came home.</span>
+        <div class="tips-good">Today, I went to a cafe after work. I felt relaxed because I finally had some time for myself. It was a small thing, but it helped me feel better.</div>
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">④ 오픽 주제 연결 X</div>
+        마지막에 <em>"I can use this story for [topic]"</em> 빠지면 그냥 일기에서 끝나요.
+      </div>`
+    },
+    {
+      title: "하루 10분 루틴 + 체크리스트",
+      sub: "이것만 매일 돌리면 한 달 뒤 변화",
+      body: `<div class="tips-example">
+        <div class="tips-example-label">⏱ 10분 루틴</div>
+        <strong>1분</strong> — 오늘 있었던 일 하나 고르기<br>
+        <strong>3분</strong> — 영어로 5~7문장 쓰기<br>
+        <strong>2분</strong> — 감정·이유·깨달음 추가<br>
+        <strong>2분</strong> — 오픽 주제 3개와 연결<br>
+        <strong>2분</strong> — 소리 내서 읽고 안 보고 말하기
+      </div>
+      <div class="tips-example">
+        <div class="tips-example-label">✅ 매일 체크리스트 (7개 중 5개면 OK)</div>
+        ☐ What happened이 있는가?<br>
+        ☐ Feeling이 있는가?<br>
+        ☐ Why가 있는가?<br>
+        ☐ One detail이 있는가?<br>
+        ☐ Realization이 있는가?<br>
+        ☐ OPIc topic 연결이 있는가?<br>
+        ☐ 소리 내서 말해봤는가?
+      </div>`
+    },
+  ];
+
+  // ---- Tip carousel factory (works for both diary + opic panels) ----
+  function makeTipCarousel(prefix, tips) {
+    let idx = 0;
+    const elCard    = document.getElementById(`${prefix}-tip-card`);
+    const elCurrent = document.getElementById(`${prefix}-tip-current`);
+    const elTotal   = document.getElementById(`${prefix}-tip-total`);
+
+    function render() {
+      const t = tips[idx];
+      elCurrent.textContent = idx + 1;
+      elTotal.textContent = tips.length;
+      elCard.innerHTML = `
+        <div class="tip-card-title">${t.title}</div>
+        <div class="tip-card-sub">${t.sub}</div>
+        <div class="tip-card-body">${t.body}</div>
+      `;
+      // restart fade animation
+      elCard.style.animation = 'none';
+      void elCard.offsetWidth;
+      elCard.style.animation = '';
+    }
+    function next() { idx = (idx + 1) % tips.length; render(); }
+    function prev() { idx = (idx - 1 + tips.length) % tips.length; render(); }
+    function rand() {
+      if (tips.length <= 1) return render();
+      let n = idx;
+      while (n === idx) n = Math.floor(Math.random() * tips.length);
+      idx = n; render();
+    }
+
+    document.getElementById(`${prefix}-tip-prev`).addEventListener('click', prev);
+    document.getElementById(`${prefix}-tip-next`).addEventListener('click', next);
+    document.getElementById(`${prefix}-tip-random`).addEventListener('click', rand);
+
+    render();
+    return { next, render };
+  }
+
+  const diaryCarousel = makeTipCarousel('diary', DIARY_TIPS);
+  const opicCarousel  = makeTipCarousel('opic',  OPIC_TIPS);
+  let tipsModalOpened = false;
+
   function openTipsModal() {
     document.getElementById('tips-modal').classList.add('show');
+    // advance the active tab's carousel on each subsequent open
+    if (tipsModalOpened) {
+      const active = document.querySelector('.tips-tab.active').dataset.tipsTab;
+      if (active === 'diary') diaryCarousel.next();
+      else if (active === 'opic') opicCarousel.next();
+    }
+    tipsModalOpened = true;
   }
   function closeTipsModal() {
     document.getElementById('tips-modal').classList.remove('show');
@@ -5248,6 +5917,9 @@ Now output ONLY the JSON object:`;
       const which = tab.dataset.tipsTab;
       document.querySelectorAll('.tips-tab').forEach(t => t.classList.toggle('active', t.dataset.tipsTab === which));
       document.querySelectorAll('.tips-panel').forEach(p => p.classList.toggle('active', p.id === `tips-panel-${which}`));
+      // re-trigger fade so the just-switched panel feels fresh
+      if (which === 'diary') diaryCarousel.render();
+      else if (which === 'opic') opicCarousel.render();
     });
   });
 
@@ -5258,7 +5930,7 @@ Now output ONLY the JSON object:`;
     if (e.target.id === 'settings-modal') closeSettingsModal();
   });
   document.getElementById('settings-save').addEventListener('click', saveSettings);
-  document.getElementById('settings-test').addEventListener('click', testEmailNow);
+  document.getElementById('settings-test').addEventListener('click', testNotifyNow);
 
   // Dashboard
   document.getElementById('card-diary').addEventListener('click', () => navigateTo('diary-write'));
@@ -5392,12 +6064,50 @@ Now output ONLY the JSON object:`;
     setTimeout(updateTopicCounter, 1800);
   }
 
+  function renderHoursPreview(hours) {
+    const el = document.getElementById('notify-hours-preview');
+    if (!Array.isArray(hours) || hours.length === 0) {
+      el.textContent = '⚠️ 알림 비활성화';
+      el.style.color = 'var(--muted)';
+    } else {
+      el.textContent = `📅 다음 시각에 알림: ${hours.map(h => h.toString().padStart(2, '0') + ':00').join(', ')}`;
+      el.style.color = 'var(--accent)';
+    }
+  }
+  function computeHoursClient(startH, intervalH, count) {
+    const s = Math.max(0, Math.min(23, parseInt(startH, 10) || 0));
+    const i = Math.max(1, Math.min(24, parseInt(intervalH, 10) || 1));
+    const n = Math.max(0, Math.min(24, parseInt(count, 10) || 0));
+    const out = [];
+    let h = s;
+    for (let k = 0; k < n; k++) {
+      if (h > 23) break;
+      out.push(h);
+      h += i;
+    }
+    return out;
+  }
+  function bindScheduleInputsLive() {
+    const ids = ['set-notify-start-hour', 'set-notify-interval-hours', 'set-notify-count'];
+    const updater = () => renderHoursPreview(computeHoursClient(
+      document.getElementById('set-notify-start-hour').value,
+      document.getElementById('set-notify-interval-hours').value,
+      document.getElementById('set-notify-count').value
+    ));
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      el.removeEventListener('input', updater);
+      el.addEventListener('input', updater);
+    });
+  }
+
   async function openSettingsModal() {
     document.getElementById('settings-modal').classList.add('show');
     document.getElementById('settings-result').hidden = true;
     // Seed picker from in-memory state immediately so it renders before fetch completes
     pickerSelected = new Set(Array.isArray(state.opicSelectedTopics) ? state.opicSelectedTopics : []);
     renderOpicTopicPicker();
+    bindScheduleInputsLive();
     try {
       const r = await fetch('/api/settings/');
       const s = await r.json();
@@ -5405,12 +6115,13 @@ Now output ONLY the JSON object:`;
       const serverSel = Array.isArray(s.opic_selected_topics) ? s.opic_selected_topics : [];
       pickerSelected = new Set(serverSel);
       renderOpicTopicPicker();
-      document.getElementById('set-email-to').value = s.notify_email_to || '';
-      document.getElementById('set-email-from').value = s.notify_email_from || '';
-      document.getElementById('set-from-name').value = s.notify_from_name || '매일 영어';
-      document.getElementById('set-gmail-user').value = s.gmail_user || '';
+
       document.getElementById('set-ntfy-topic').value = s.ntfy_topic || '';
       document.getElementById('set-site-url').value = s.site_url || 'http://localhost:8000';
+      document.getElementById('set-notify-start-hour').value = (s.notify_start_hour != null ? s.notify_start_hour : 23);
+      document.getElementById('set-notify-interval-hours').value = (s.notify_interval_hours != null ? s.notify_interval_hours : 1);
+      document.getElementById('set-notify-count').value = (s.notify_count != null ? s.notify_count : 1);
+      renderHoursPreview(s.notify_hours_preview);
 
       const ntfyHint = document.getElementById('ntfy-topic-hint');
       if (s.ntfy_topic) {
@@ -5425,12 +6136,6 @@ Now output ONLY the JSON object:`;
             document.getElementById('set-ntfy-topic').value = `opic-daily-${rand}`;
           });
         }, 50);
-      }
-      const passStatus = document.getElementById('gmail-pass-status');
-      if (s.gmail_app_password_set) {
-        passStatus.innerHTML = '✓ 앱 비밀번호 저장됨 — 바꾸려면 새로 입력 · <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:var(--accent);">앱 비밀번호 만들기</a>';
-      } else {
-        passStatus.innerHTML = '⚠️ 비밀번호 미설정 → Direct MX로 fallback · <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:var(--accent);">앱 비밀번호 만들기</a>';
       }
       // tunnel URL이 떠 있으면 hint에 표시
       const hint = document.getElementById('tunnel-hint');
@@ -5465,13 +6170,11 @@ Now output ONLY the JSON object:`;
     }
     const topics = Array.from(pickerSelected);
     const body = {
-      notify_email_to: document.getElementById('set-email-to').value.trim(),
-      notify_email_from: document.getElementById('set-email-from').value.trim(),
-      notify_from_name: document.getElementById('set-from-name').value.trim(),
       site_url: document.getElementById('set-site-url').value.trim(),
-      gmail_user: document.getElementById('set-gmail-user').value.trim(),
-      gmail_app_password: document.getElementById('set-gmail-pass').value, // empty = keep
       ntfy_topic: document.getElementById('set-ntfy-topic').value.trim(),
+      notify_start_hour: parseInt(document.getElementById('set-notify-start-hour').value, 10),
+      notify_interval_hours: parseInt(document.getElementById('set-notify-interval-hours').value, 10),
+      notify_count: parseInt(document.getElementById('set-notify-count').value, 10),
       opic_selected_topics: topics,
     };
     try {
@@ -5494,35 +6197,26 @@ Now output ONLY the JSON object:`;
           renderOpic();
         }
       }
-      showSettingsResult('✅ 저장됨' + (selCount ? ` · OPIc 토픽 ${selCount}개 활성` : ' · OPIc 전체 토픽 사용'), true);
-      document.getElementById('set-gmail-pass').value = '';
-      const passStatus = document.getElementById('gmail-pass-status');
-      if (data.gmail_app_password_set) {
-        passStatus.innerHTML = '✓ 앱 비밀번호 저장됨 · <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:var(--accent);">관리</a>';
-      }
+      renderHoursPreview(data.notify_hours_preview);
+      const hours = Array.isArray(data.notify_hours_preview) ? data.notify_hours_preview : [];
+      const schedMsg = hours.length === 0
+        ? '알림 비활성화'
+        : `${hours.length}회 알림 (${hours.map(h => h + '시').join(', ')})`;
+      const opicMsg = selCount ? ` · OPIc ${selCount}개 활성` : ' · OPIc 전체 토픽';
+      showSettingsResult(`✅ 저장됨 · ${schedMsg}${opicMsg}`, true);
     } catch (e) {
       showSettingsResult('저장 실패: ' + e.message, false);
     }
   }
-  async function testEmailNow() {
+  async function testNotifyNow() {
     showSettingsResult('📤 발송 중...', true);
     try {
-      const r = await fetch('/api/test-email/', { method: 'POST' });
+      const r = await fetch('/api/test-notify/', { method: 'POST' });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
-      let methodLabel, extra = '';
-      if (data.method === 'ntfy') {
-        methodLabel = '⚡ ntfy.sh 푸시';
-        extra = `<br>📡 <a href="https://ntfy.sh/${data.to}" target="_blank" style="color:var(--opic);">https://ntfy.sh/${data.to}</a> 열어서 확인`;
-      } else if (data.method === 'gmail_smtp') {
-        methodLabel = '✉️ Gmail SMTP';
-        extra = '<br><span style="font-size:11px; color:var(--muted);">받은편지함 / 스팸함 확인</span>';
-      } else {
-        methodLabel = '🌐 Direct MX';
-        extra = '<br><span style="font-size:11px; color:var(--muted);">스팸함 확인 (Gmail에 거부될 수 있음)</span>';
-      }
+      const url = `https://ntfy.sh/${data.topic}`;
       showSettingsResult(
-        `✅ 발송 완료<br>방식: ${methodLabel} (<code>${data.via}</code>)<br>대상: <strong>${data.to}</strong>${extra}`,
+        `✅ 발송 완료<br>방식: ⚡ ntfy.sh 푸시<br>대상: <strong>${data.topic}</strong><br>📡 <a href="${url}" target="_blank" style="color:var(--opic);">${url}</a> 열어서 확인`,
         true
       );
     } catch (e) {

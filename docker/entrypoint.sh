@@ -4,9 +4,11 @@ set -e
 mkdir -p /app/data
 python manage.py migrate --noinput
 
-# ===== 1. Cron daemon (daily 23:00 KST notify) =====
-echo "🕐 Starting cron daemon (TZ=$TZ)..."
+# ===== 1. Generate crontab from saved settings, then start cron daemon =====
+echo "🕐 Generating /etc/cron.d/opic-daily from settings (TZ=$TZ)..."
+python manage.py write_crontab || echo "  (write_crontab skipped/failed — using empty schedule)"
 cron
+echo "   ✓ cron daemon up. Edit schedule via ⚙️ 설정 — file regenerates on save."
 
 # ===== 2. Cloudflare Quick Tunnel (background) =====
 # URL goes into /app/data/tunnel_url.txt which views.py serves to the settings UI

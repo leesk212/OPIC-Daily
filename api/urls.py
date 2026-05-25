@@ -9,5 +9,5 @@ urlpatterns = [
     path('feedback/', views.feedback, name='feedback'),
     path('import/', views.import_data, name='import'),
     path('settings/', views.settings_view, name='settings'),
-    path('test-email/', views.test_email, name='test_email'),
+    path('test-notify/', views.test_notify, name='test_notify'),
 ]
