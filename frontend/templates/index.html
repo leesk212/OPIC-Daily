@@ -93,6 +93,97 @@
   }
   .icon-btn:hover { background: var(--card-2); border-color: var(--muted); }
 
+  /* ===== User chip (header) ===== */
+  .user-chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: default;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .user-chip.admin {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ===== Login view ===== */
+  .view-login {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+  }
+  .login-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .login-brand { margin-bottom: 4px; }
+  .login-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .login-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .login-input {
+    width: 100%;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: inherit;
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+  .login-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .login-card .cta-submit {
+    margin-top: 4px;
+  }
+  .login-admin-link {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 12.5px;
+    padding: 8px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .login-admin-link:hover { color: var(--text-2); text-decoration: underline; }
+  .login-help {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
   /* ===== Main ===== */
   .app-main {
     max-width: 720px;
@@ -2360,9 +2451,10 @@
 </head>
 <body>
 
-<header class="app-header">
+<header class="app-header" id="app-header" hidden>
   <button class="brand" id="brand-btn"><span class="icon">📔</span>매일 영어</button>
   <div class="header-actions">
+    <button class="user-chip" id="user-chip" title="현재 사용자"><span>👤</span><span id="user-chip-name">…</span></button>
     <button class="streak-chip cold" id="streak-chip" title="활동 보기">
       <span>🔥</span>
       <span id="streak-num">0</span>
@@ -2372,13 +2464,32 @@
     <button class="icon-btn" id="open-tips" title="AL 작성 팁">💡</button>
     <button class="icon-btn" id="open-combos" title="OPIc Combo 카탈로그">📚</button>
     <button class="icon-btn" id="open-settings" title="알림 설정">⚙️</button>
+    <button class="icon-btn" id="logout-btn" title="로그아웃">🚪</button>
   </div>
 </header>
 
 <main class="app-main">
 
+  <!-- ============ LOGIN ============ -->
+  <section class="view view-login" id="view-login">
+    <div class="login-card">
+      <div class="login-brand"><span style="font-size:42px;">📔</span></div>
+      <h1 class="login-title">매일 영어</h1>
+      <div class="login-sub">ID로 로그인해서 내 학습 기록을 이어가세요</div>
+
+      <div class="error-box" id="login-error" hidden></div>
+
+      <input type="text" class="login-input" id="login-username" placeholder="ID 입력" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <button class="cta-submit" id="login-submit">로그인 →</button>
+
+      <button class="login-admin-link" id="login-admin-link">🔐 관리자 로그인</button>
+
+      <div class="login-help">ID가 없으신가요? 관리자에게 발급받으세요.</div>
+    </div>
+  </section>
+
   <!-- ============ HOME (Dashboard) ============ -->
-  <section class="view view-home" id="view-home">
+  <section class="view view-home" id="view-home" hidden>
     <div class="dash-header">
       <div class="dash-date" id="dash-date"></div>
       <div class="dash-title">오늘의 영어</div>
@@ -2844,6 +2955,71 @@
   let state = loadData();
   if (!state.entries) state.entries = {};
 
+  // ============ Auth state ============
+  const AUTH_STORAGE_KEY = 'opic-current-user';
+  let currentUser = null;  // { username, displayName, createdAt } | null
+  let adminPassword = null; // cached after admin login, kept in memory only
+
+  function getStoredUser() {
+    try {
+      const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+  function setStoredUser(u) {
+    if (u) localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(u));
+    else   localStorage.removeItem(AUTH_STORAGE_KEY);
+  }
+
+  async function authFetch(url, init = {}) {
+    const headers = new Headers(init.headers || {});
+    if (currentUser) headers.set('X-User-Id', currentUser.username);
+    return fetch(url, { ...init, headers });
+  }
+  async function adminFetch(url, init = {}) {
+    const headers = new Headers(init.headers || {});
+    if (adminPassword) headers.set('X-Admin-Password', adminPassword);
+    if (!headers.has('Content-Type') && init.body) headers.set('Content-Type', 'application/json');
+    return fetch(url, { ...init, headers });
+  }
+
+  async function verifyUser(username) {
+    const r = await fetch('/api/auth/login/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || '로그인 실패');
+    return data;
+  }
+
+  function showLoginView() {
+    document.getElementById('app-header').hidden = true;
+    document.getElementById('view-login').hidden = false;
+    for (const id of ['view-home','view-diary-write','view-opic','view-feedback']) {
+      const el = document.getElementById(id);
+      if (el) el.hidden = true;
+    }
+    setTimeout(() => document.getElementById('login-username')?.focus(), 50);
+  }
+  function showAppShell() {
+    document.getElementById('app-header').hidden = false;
+    document.getElementById('view-login').hidden = true;
+    const chip = document.getElementById('user-chip-name');
+    if (chip) chip.textContent = currentUser.displayName || currentUser.username;
+  }
+
+  async function doLogout() {
+    currentUser = null;
+    adminPassword = null;
+    setStoredUser(null);
+    // wipe per-user local cache so next user doesn't see stale entries
+    state.entries = {};
+    saveData(state);
+    showLoginView();
+  }
+
   // Migration: single -> array
   (function migrate() {
     let changed = false;
@@ -2874,7 +3050,7 @@
   async function addEntry(key, entry) {
     // Try to save to server first; use server-assigned ID
     try {
-      const r = await fetch('/api/entries/', {
+      const r = await authFetch('/api/entries/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...entry, date: key }),
@@ -2894,7 +3070,7 @@
   }
   async function deleteEntryById(dateKey, entryId) {
     try {
-      await fetch('/api/entries/' + entryId + '/', { method: 'DELETE' });
+      await authFetch('/api/entries/' + entryId + '/', { method: 'DELETE' });
     } catch (e) {
       console.error('deleteEntry network error', e);
     }
@@ -5235,7 +5411,7 @@
           const data = JSON.parse(ev.target.result);
           if (!data || typeof data !== 'object') throw new Error('Invalid format');
           if (!confirm('서버에 import 합니다. 기존 entries는 유지되고 추가로 들어갑니다.')) return;
-          const r = await fetch('/api/import/', {
+          const r = await authFetch('/api/import/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
@@ -6510,7 +6686,7 @@ Now output ONLY the JSON object:`;
 
   async function fetchComboStats() {
     try {
-      const res = await fetch('/api/opic-combo-stats/');
+      const res = await authFetch('/api/opic-combo-stats/');
       if (!res.ok) throw new Error('stats fetch failed');
       comboStatsCache = await res.json();
     } catch (e) {

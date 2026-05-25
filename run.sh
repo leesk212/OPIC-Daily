@@ -34,9 +34,14 @@ python manage.py makemigrations api --noinput
 echo "🗄  DB 마이그레이션..."
 python manage.py migrate --noinput
 
-# ⚙️ 설정에 저장된 알림 스케줄을 호스트 user crontab에 자동 등록 (호스트 cron 없으면 skip)
+mkdir -p data
+
+# ⚙️ 설정에 저장된 알림 스케줄을 호스트 user crontab에 자동 등록.
+# macOS crontab이 권한 prompt 등으로 가끔 멈춰서 서버 시작이 막히는 일이
+# 있어 백그라운드로 fire-and-forget. 결과는 data/install-cron.log에 남음.
 if command -v crontab &> /dev/null; then
-  ./install-cron.sh --quiet || true
+  ( ./install-cron.sh --quiet > data/install-cron.log 2>&1 || true ) &
+  echo "🕐 cron 등록 백그라운드 진행 중 (결과: tail data/install-cron.log)"
 fi
 
 # 포트 사용 중이면 자동으로 정리 시도

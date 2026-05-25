@@ -4,6 +4,10 @@ from . import views
 urlpatterns = [
     path('health/', views.health, name='health'),
     path('opic-combo-stats/', views.opic_combo_stats, name='opic_combo_stats'),
+    path('auth/login/', views.auth_login, name='auth_login'),
+    path('auth/admin/', views.auth_admin_check, name='auth_admin'),
+    path('admin/users/', views.admin_users, name='admin_users'),
+    path('admin/users/<str:username>/', views.admin_user_detail, name='admin_user_detail'),
     path('diagnose/', views.diagnose, name='diagnose'),
     path('entries/', views.entries_collection, name='entries'),
     path('entries/<int:entry_id>/', views.entry_detail, name='entry_detail'),

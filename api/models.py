@@ -1,4 +1,33 @@
+from __future__ import annotations  # Python 3.9 호환 — `int | None` 등 PEP 604 어노테이션 lazy 평가
+
 from django.db import models
+
+
+class User(models.Model):
+    """Lightweight user — just an ID issued by admin. No password.
+
+    Entries and any future per-user data point at this row. Admin
+    isn't a User row — it's a global password gate.
+    """
+    username = models.CharField(max_length=64, unique=True, db_index=True)
+    display_name = models.CharField(max_length=128, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return self.username
+
+    def to_dict(self, entries_count: int | None = None):
+        out = {
+            'username': self.username,
+            'displayName': self.display_name,
+            'createdAt': self.created_at.isoformat() if self.created_at else None,
+        }
+        if entries_count is not None:
+            out['entriesCount'] = entries_count
+        return out
 
 
 class Entry(models.Model):
@@ -6,6 +35,7 @@ class Entry(models.Model):
         ('diary', 'Diary'),
         ('opic', 'Opic'),
     ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='entries')
     date = models.CharField(max_length=10, db_index=True)  # YYYY-MM-DD
     mode = models.CharField(max_length=10, choices=MODE_CHOICES)
     text = models.TextField()

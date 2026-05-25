@@ -11,8 +11,28 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from .ai_client import call_claude, ClaudeCodeError, diagnose as claude_diagnose
-from .models import Entry, Preference
+from .models import Entry, Preference, User
 from .prompts import build_diary_prompt, build_opic_prompt
+
+import os
+ADMIN_PASSWORD = os.environ.get('OPIC_ADMIN_PASSWORD', 'leek1122*')
+
+
+def _current_user(request):
+    """Resolve the requesting user from X-User-Id header. Returns User or None."""
+    uid = request.headers.get('X-User-Id', '').strip()
+    if not uid:
+        return None
+    try:
+        return User.objects.get(username=uid)
+    except User.DoesNotExist:
+        return None
+
+
+def _require_admin(request):
+    """Check X-Admin-Password header against the configured admin password."""
+    pw = request.headers.get('X-Admin-Password', '')
+    return bool(pw) and pw == ADMIN_PASSWORD
 
 # Default settings (used as fallback; UI shows these prefilled)
 DEFAULT_SETTINGS = {
@@ -161,14 +181,18 @@ def health(request):
 
 
 def opic_combo_stats(request):
-    """Aggregate Entry rows (mode=opic) by combo + question index.
+    """Aggregate Entry rows (mode=opic) by combo + question index for the current user.
 
     Returns counts only — the combo catalog itself lives in the frontend
     (OPIC_COMBOS const). The frontend joins these counts onto its catalog.
     """
+    user = _current_user(request)
+    if user is None:
+        return JsonResponse({'totalAnswers': 0, 'combosAnswered': 0, 'byCombo': {}})
+
     from django.db.models import Count
     rows = (Entry.objects
-            .filter(mode='opic')
+            .filter(user=user, mode='opic')
             .values('opic_combo', 'opic_question_index')
             .annotate(count=Count('id')))
 
@@ -199,13 +223,93 @@ def diagnose(request):
     return JsonResponse(claude_diagnose(), json_dumps_params={'indent': 2})
 
 
+# ============ Auth (ID-based for users, password gate for admin) ============
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def auth_login(request):
+    """User login by ID. Body: {username}. Returns user info or 404."""
+    try:
+        data = json.loads(request.body or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    uid = (data.get('username') or '').strip()
+    if not uid:
+        return JsonResponse({'error': 'username required'}, status=400)
+    try:
+        u = User.objects.get(username=uid)
+    except User.DoesNotExist:
+        return JsonResponse({'error': '등록되지 않은 ID입니다. 관리자에게 문의하세요.'}, status=404)
+    return JsonResponse(u.to_dict())
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def auth_admin_check(request):
+    """Admin login. Body: {password}. Returns ok or 403."""
+    try:
+        data = json.loads(request.body or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    if (data.get('password') or '') != ADMIN_PASSWORD:
+        return JsonResponse({'error': '비밀번호가 틀렸습니다.'}, status=403)
+    return JsonResponse({'ok': True})
+
+
+@csrf_exempt
+@require_http_methods(['GET', 'POST'])
+def admin_users(request):
+    """List or create users. Requires X-Admin-Password header."""
+    if not _require_admin(request):
+        return JsonResponse({'error': '관리자 인증 필요'}, status=403)
+
+    if request.method == 'GET':
+        from django.db.models import Count
+        users = User.objects.annotate(n=Count('entries')).order_by('created_at')
+        return JsonResponse({
+            'users': [u.to_dict(entries_count=u.n) for u in users],
+        })
+
+    # POST — create new user
+    try:
+        data = json.loads(request.body or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    uid = (data.get('username') or '').strip()
+    if not uid:
+        return JsonResponse({'error': 'username required'}, status=400)
+    if not re.match(r'^[A-Za-z0-9_.-]{2,64}$', uid):
+        return JsonResponse({'error': 'username은 영문/숫자/_.- 2~64자'}, status=400)
+    if User.objects.filter(username=uid).exists():
+        return JsonResponse({'error': '이미 존재하는 ID입니다.'}, status=409)
+    u = User.objects.create(username=uid, display_name=(data.get('displayName') or '').strip())
+    return JsonResponse(u.to_dict(entries_count=0), status=201)
+
+
+@csrf_exempt
+@require_http_methods(['DELETE'])
+def admin_user_detail(request, username: str):
+    if not _require_admin(request):
+        return JsonResponse({'error': '관리자 인증 필요'}, status=403)
+    try:
+        u = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'Not found'}, status=404)
+    u.delete()  # cascades to entries
+    return JsonResponse({'status': 'deleted'})
+
+
 # ============ Entries ============
 
 @csrf_exempt
 @require_http_methods(['GET', 'POST'])
 def entries_collection(request):
+    user = _current_user(request)
+    if user is None:
+        return JsonResponse({'error': '로그인 필요', 'entries': []}, status=401)
+
     if request.method == 'GET':
-        entries = Entry.objects.all().order_by('completed_at')
+        entries = Entry.objects.filter(user=user).order_by('completed_at')
         return JsonResponse({'entries': [e.to_dict() for e in entries]})
 
     # POST — create new entry
@@ -220,6 +324,7 @@ def entries_collection(request):
             return JsonResponse({'error': f'{field} required'}, status=400)
 
     entry = Entry.objects.create(
+        user=user,
         date=data['date'],
         mode=data['mode'],
         text=data['text'],
@@ -237,8 +342,11 @@ def entries_collection(request):
 @csrf_exempt
 @require_http_methods(['DELETE'])
 def entry_detail(request, entry_id: int):
+    user = _current_user(request)
+    if user is None:
+        return JsonResponse({'error': '로그인 필요'}, status=401)
     try:
-        entry = Entry.objects.get(id=entry_id)
+        entry = Entry.objects.get(id=entry_id, user=user)
     except Entry.DoesNotExist:
         return JsonResponse({'error': 'Not found'}, status=404)
     entry.delete()
@@ -478,6 +586,9 @@ def test_notify(request):
 @csrf_exempt
 @require_http_methods(['POST'])
 def import_data(request):
+    user = _current_user(request)
+    if user is None:
+        return JsonResponse({'error': '로그인 필요'}, status=401)
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
@@ -496,6 +607,7 @@ def import_data(request):
                 continue
             try:
                 Entry.objects.create(
+                    user=user,
                     date=date_key,
                     mode=e.get('mode', 'diary'),
                     text=e.get('text', ''),
