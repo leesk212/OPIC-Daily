@@ -1,9 +1,10 @@
 services:
   opic-daily:
-    # Pull from GitHub Container Registry (built by .github/workflows/docker.yml)
-    image: ghcr.io/leesk212/opic-daily:latest
-    # Local-only build alternative: comment out `image:` above and uncomment:
-    # build: .
+    # 기본: 현재 소스 코드로 로컬 빌드. clone 한 직후 바로 `docker compose up -d` 가능.
+    build: .
+    # 미리 빌드된 이미지를 쓰고 싶으면 위 build를 주석 처리하고 아래 image를 사용.
+    # (GHCR 패키지를 public으로 바꿔야 익명 pull 됨)
+    # image: ghcr.io/leesk212/opic-daily:latest
     container_name: opic-daily
     ports:
       - "8000:8000"

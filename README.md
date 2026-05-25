@@ -37,58 +37,39 @@ cd opic-daily
 - 🤖 **Claude Code CLI** 번들 (subprocess로 호출)
 - 💾 SQLite DB + Claude 인증 세션은 볼륨으로 보존
 
-### 1) docker compose로 (가장 추천)
+### 한 줄 시작 (clone → up)
+
+Docker Desktop만 켜져 있으면 됩니다.
 
 ```bash
-# 이미지 받아서 백그라운드 실행
-docker compose up -d
+git clone https://github.com/leesk212/OPIC-Daily.git
+cd OPIC-Daily
+docker compose up -d --build     # 첫 빌드 3~5분, 이후엔 캐시로 빠름
 
-# 최초 1회: Claude Code CLI 로그인 (브라우저 URL 발급됨)
-docker exec -it opic-daily claude login
-
-# 접속
+docker exec -it opic-daily claude login   # 최초 1회 — 브라우저로 인증
 open http://localhost:8000
 ```
 
-- 로그인 정보는 `claude-auth` named volume에 저장되므로 컨테이너 재시작/업데이트해도 유지됩니다.
-- SQLite DB와 로그는 호스트의 `./data/`에 영구 저장됩니다.
+`docker-compose.yml`은 기본적으로 **로컬 빌드** (GHCR pull 안 함)로 설정돼 있어서 인증·visibility 신경 안 써도 됩니다.
 
-종료:
+종료/관리:
 ```bash
-docker compose down            # 컨테이너만 정지 (data + 인증 유지)
-docker compose down -v         # 볼륨까지 삭제 (인증 초기화)
+docker compose logs -f opic-daily    # 실시간 로그 (cloudflared URL 등)
+docker compose down                  # 정지 (data + 인증 유지)
+docker compose down -v               # 전부 삭제 (인증·DB 초기화)
+docker compose up -d --build         # 코드 업데이트 후 재빌드
 ```
 
-### 2) 순수 `docker run`만으로
+### (옵션) 미리 빌드된 GHCR 이미지 사용
+
+빌드 시간 아끼고 싶으면 [패키지를 public으로 바꾼 뒤](https://github.com/users/leesk212/packages/container/opic-daily/settings) `docker-compose.yml`의 `build: .`를 주석 처리하고 `image: ghcr.io/leesk212/opic-daily:latest` 라인을 활성화. main 브랜치 push마다 GitHub Actions가 멀티-아키 이미지를 자동 게시합니다.
+
+### (옵션) API key 주입해서 `claude login` 생략
 
 ```bash
-docker run -d --name opic-daily \
-  -p 8000:8000 \
-  -v $(pwd)/data:/app/data \
-  -v opic-daily-auth:/root/.claude \
-  -it ghcr.io/leesk212/opic-daily:latest
-
-docker exec -it opic-daily claude login
+ANTHROPIC_API_KEY=sk-ant-... docker compose up -d --build
 ```
-
-### 3) API key를 환경변수로 (로그인 생략하고 싶을 때)
-
-```bash
-docker run -d --name opic-daily \
-  -p 8000:8000 \
-  -v $(pwd)/data:/app/data \
-  -e ANTHROPIC_API_KEY=sk-ant-... \
-  ghcr.io/leesk212/opic-daily:latest
-```
-
-### 로컬 빌드 (이미지 안 받고 직접 빌드)
-
-```bash
-docker compose build              # 또는 docker build -t opic-daily .
-docker compose up -d
-```
-
-> 이미지는 main 브랜치에 push가 발생할 때마다 GitHub Actions가 자동으로 `ghcr.io/leesk212/opic-daily:latest` (linux/amd64 + linux/arm64)로 빌드·게시합니다.
+(docker-compose.yml의 `environment:` 섹션에서 주석 처리된 `ANTHROPIC_API_KEY` 줄을 활성화)
 
 ## 폴더 구조
 
