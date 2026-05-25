@@ -211,13 +211,18 @@ def pick_random_quote():
         return None
 
 
-def build_status_line(user_label: str, has_diary: bool, has_opic: bool) -> str:
-    """포맷: '오늘자 Danny 일기 ✅, opic ☐' (체크박스로 완료/미완료 표시).
-    user_label은 display_name 우선, 없으면 username, 둘 다 없으면 빈 문자열."""
+def build_status_line(user_label: str, has_diary: bool, has_opic: bool, day=None) -> str:
+    """포맷: '오늘자 2026-05-26 Danny 일기 ✅, opic ☐'.
+    user_label은 display_name 우선/없으면 username/둘 다 없으면 생략.
+    day가 None이면 오늘 날짜 사용."""
+    from datetime import date
+    if day is None:
+        day = date.today()
+    date_str = day.isoformat() if hasattr(day, 'isoformat') else str(day)
     diary_box = '✅' if has_diary else '☐'
     opic_box = '✅' if has_opic else '☐'
     who = f' {user_label}' if user_label else ''
-    return f'오늘자{who} 일기 {diary_box}, opic {opic_box}'
+    return f'오늘자 {date_str}{who} 일기 {diary_box}, opic {opic_box}'
 
 
 def resolve_user_label(user_obj_or_username) -> str:
