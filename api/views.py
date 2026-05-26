@@ -37,14 +37,19 @@ def _require_admin(request):
 # Default settings (used as fallback; UI shows these prefilled)
 DEFAULT_SETTINGS = {
     'site_url': 'http://localhost:8000',
-    'ntfy_topic': '',                  # 예: opic-daily-leesk212-7n3xq
-    # 알림 스케줄 (24h, KST 기준 — cron이 들고 있음)
+    'slack_webhook_url': '',           # admin이 admin 페이지에서 설정. https://hooks.slack.com/...
+    'slack_mention_user_id': '',       # 본인 Slack member ID (예: U01ABCDEF) — 메시지 앞에 <@ID> 자동 부착해 모바일 푸시 강제
+    # 알림 스케줄 (24h, KST 기준) — 분 단위
     'notify_start_hour': 23,           # 0-23
-    'notify_interval_hours': 1,        # 1-24
-    'notify_count': 1,                 # 0-24 (0이면 비활성화)
-    # cron이 누구의 일기/Opic 완료 여부를 볼지. 비우면 모든 user 합산.
+    'notify_start_minute': 0,          # 0-59
+    'notify_interval_minutes': 60,     # 1-1440 (즉 1분 ~ 24시간)
+    'notify_count': 1,                 # 0-48 (0이면 비활성화)
+    # 누구의 일기/Opic 완료 여부를 볼지. 비우면 모든 user 합산.
     'notify_user': '',
 }
+
+# Keys that only admin can write/read in full. Non-admin GETs see masked value.
+ADMIN_ONLY_SETTING_KEYS = {'slack_webhook_url', 'slack_mention_user_id'}
 
 SETTINGS_KEY = 'app_settings'
 
@@ -68,7 +73,8 @@ def get_settings() -> dict:
     import os as _os
     env_map = {
         'site_url': 'SITE_URL',
-        'ntfy_topic': 'NTFY_TOPIC',
+        'slack_webhook_url': 'SLACK_WEBHOOK_URL',
+        'slack_mention_user_id': 'SLACK_MENTION_USER_ID',
     }
     for k, env_k in env_map.items():
         v = _os.environ.get(env_k)
@@ -79,11 +85,18 @@ def get_settings() -> dict:
         k: v for k, v in stored.items()
         if k in ALLOWED_SETTING_KEYS and v not in (None, '')
     })
-    for k in ('notify_start_hour', 'notify_interval_hours', 'notify_count'):
+    for k in ('notify_start_hour', 'notify_start_minute', 'notify_interval_minutes', 'notify_count'):
         try:
             merged[k] = int(merged.get(k, DEFAULT_SETTINGS[k]))
         except (TypeError, ValueError):
             merged[k] = DEFAULT_SETTINGS[k]
+    # backwards-compat: 이전 버전의 notify_interval_hours가 DB에 남아있고
+    # 새 키를 한 번도 저장하지 않았으면 *60으로 변환해서 보여줌.
+    if 'notify_interval_hours' in stored and stored.get('notify_interval_minutes') in (None, ''):
+        try:
+            merged['notify_interval_minutes'] = max(1, int(stored['notify_interval_hours']) * 60)
+        except (TypeError, ValueError):
+            pass
     return {k: v for k, v in merged.items() if k in ALLOWED_SETTING_KEYS}
 
 
@@ -97,20 +110,37 @@ def save_settings(new: dict) -> dict:
     return get_settings()
 
 
-def compute_notify_hours(s: dict) -> list[int]:
-    """Given settings dict, return the list of hour-of-day values where notify cron fires.
-    Caps hours at 23 — entries that would overflow are dropped."""
-    start = max(0, min(23, int(s.get('notify_start_hour', 23))))
-    interval = max(1, min(24, int(s.get('notify_interval_hours', 1))))
-    count = max(0, min(24, int(s.get('notify_count', 1))))
-    hours = []
-    h = start
+def compute_notify_slots(s: dict) -> list[tuple[int, int]]:
+    """Given settings dict, return list of (hour, minute) tuples where notify fires.
+
+    Slots are generated from notify_start_hour/notify_start_minute by adding
+    notify_interval_minutes notify_count times. Slots that would fall past
+    23:59 of the same day are dropped.
+    """
+    start_h = max(0, min(23, int(s.get('notify_start_hour', 23))))
+    start_m = max(0, min(59, int(s.get('notify_start_minute', 0))))
+    interval_min = max(1, min(1440, int(s.get('notify_interval_minutes', 60))))
+    count = max(0, min(48, int(s.get('notify_count', 1))))
+    slots: list[tuple[int, int]] = []
+    cur = start_h * 60 + start_m
     for _ in range(count):
-        if h > 23:
+        if cur > 23 * 60 + 59:
             break
-        hours.append(h)
-        h += interval
-    return hours
+        slots.append((cur // 60, cur % 60))
+        cur += interval_min
+    return slots
+
+
+def compute_notify_hours(s: dict) -> list[int]:
+    """Legacy alias — returns just the unique hours from compute_notify_slots.
+    Kept for any external caller; new code should use compute_notify_slots."""
+    seen: set[int] = set()
+    out: list[int] = []
+    for h, _ in compute_notify_slots(s):
+        if h not in seen:
+            seen.add(h)
+            out.append(h)
+    return out
 
 
 CRON_TAG = '# OPIC-Daily notify'
@@ -150,24 +180,11 @@ def _install_user_crontab(hours: list[int]) -> tuple[bool, str]:
 
 
 def _regenerate_crontab() -> None:
-    """Best-effort crontab refresh after settings change. Non-blocking:
-    fires a background thread so settings POST returns immediately even if
-    the host's `crontab` command hangs on a macOS permission prompt etc."""
-    import threading
-    from pathlib import Path
-
-    def _worker():
-        try:
-            from django.core.management import call_command
-            call_command('write_crontab', verbosity=0)
-        except Exception as e:
-            logger.info(f'write_crontab skipped: {e}')
-        if not Path('/etc/cron.d').exists():
-            hours = compute_notify_hours(get_settings())
-            ok, msg = _install_user_crontab(hours)
-            logger.info(f'host crontab update: ok={ok} — {msg}')
-
-    threading.Thread(target=_worker, daemon=True, name='crontab-regen').start()
+    """No-op since 2026-05-27 — host cron이 macOS에서 종종 동작하지 않아
+    `api/scheduler.py`의 내부 타이머 스레드가 알림 발사를 대신한다.
+    스케줄러는 매 분 settings를 재로드하므로 schedule 변경은 즉시 반영된다.
+    함수 시그니처는 호환을 위해 유지."""
+    return
 
 
 logger = logging.getLogger(__name__)
@@ -1368,32 +1385,56 @@ def entry_detail(request, entry_id: int):
 # ============ AI Feedback ============
 
 def _extract_json(raw: str):
-    """Try to extract a JSON object from arbitrary Claude output. Returns (parsed, error)."""
+    """Try to extract a JSON value (object or array) from arbitrary Claude output.
+
+    Admin AI endpoints expect arrays (`[{...}, {...}, ...]`), while a couple of
+    other endpoints expect objects. Tries both: whichever opening bracket
+    appears first in the cleaned text is treated as the root. Falls back to
+    minor repairs (smart quotes, trailing commas).
+
+    Returns (parsed, error).
+    """
     if not raw or not raw.strip():
         return None, 'empty response'
 
     cleaned = raw.strip()
     cleaned = re.sub(r'^```(?:json)?\s*', '', cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r'\s*```\s*$', '', cleaned, flags=re.IGNORECASE)
-    first = cleaned.find('{')
-    last = cleaned.rfind('}')
-    if first == -1 or last == -1 or last <= first:
-        return None, 'no JSON braces found'
-    candidate = cleaned[first:last + 1]
 
-    try:
-        return json.loads(candidate), None
-    except json.JSONDecodeError:
-        repaired = (
-            candidate
-            .replace('“', '"').replace('”', '"')
-            .replace('‘', "'").replace('’', "'")
-        )
-        repaired = re.sub(r',\s*([}\]])', r'\1', repaired)
+    obj_start = cleaned.find('{')
+    arr_start = cleaned.find('[')
+    candidates: list[tuple[str, str, int]] = []  # (open, close, start_idx)
+    if arr_start != -1:
+        candidates.append(('[', ']', arr_start))
+    if obj_start != -1:
+        candidates.append(('{', '}', obj_start))
+    if not candidates:
+        return None, 'no JSON brackets found'
+    candidates.sort(key=lambda t: t[2])  # earliest opener wins
+
+    last_err = ''
+    for open_ch, close_ch, start in candidates:
+        end = cleaned.rfind(close_ch)
+        if end <= start:
+            continue
+        candidate = cleaned[start:end + 1]
         try:
-            return json.loads(repaired), None
+            return json.loads(candidate), None
         except json.JSONDecodeError as e:
-            return None, f'JSON parse failed: {e}'
+            last_err = f'{e}'
+            repaired = (
+                candidate
+                .replace('“', '"').replace('”', '"')
+                .replace('‘', "'").replace('’', "'")
+            )
+            repaired = re.sub(r',\s*([}\]])', r'\1', repaired)
+            try:
+                return json.loads(repaired), None
+            except json.JSONDecodeError as e2:
+                last_err = f'{e2}'
+                continue
+
+    return None, f'JSON parse failed (tried array and object): {last_err}'
 
 
 @csrf_exempt
@@ -1444,7 +1485,15 @@ def feedback(request):
 def settings_view(request):
     if request.method == 'GET':
         s = get_settings()
+        is_admin = _require_admin(request)
+        # Admin-only secrets: non-admin sees only a "set / not set" boolean
+        for k in ADMIN_ONLY_SETTING_KEYS:
+            v = s.get(k, '')
+            s[f'{k}_present'] = bool(v)
+            if not is_admin:
+                s[k] = ''
         s['notify_hours_preview'] = compute_notify_hours(s)
+        s['notify_slots_preview'] = [{'h': h, 'm': m} for h, m in compute_notify_slots(s)]
         # tunnel URL
         from pathlib import Path
         from django.conf import settings as ds
@@ -1497,13 +1546,30 @@ def settings_view(request):
 
     # --- global keys ---
     to_save: dict = {}
-    for k in ['site_url', 'ntfy_topic', 'notify_user']:
+    is_admin = _require_admin(request)
+    for k in ['site_url', 'notify_user']:
         if k in data:
             to_save[k] = str(data[k]).strip()
+    if 'slack_webhook_url' in data:
+        if not is_admin:
+            return JsonResponse({'error': 'admin only — Slack webhook URL은 관리자만 변경 가능'}, status=403)
+        val = str(data['slack_webhook_url']).strip()
+        if val and not val.startswith('https://hooks.slack.com/'):
+            return JsonResponse({'error': 'Slack Incoming Webhook URL 형식이 아님 (https://hooks.slack.com/...)'}, status=400)
+        to_save['slack_webhook_url'] = val
+    if 'slack_mention_user_id' in data:
+        if not is_admin:
+            return JsonResponse({'error': 'admin only — Slack mention ID는 관리자만 변경 가능'}, status=403)
+        val = str(data['slack_mention_user_id']).strip()
+        # Slack member ID: 'U' or 'W' 시작, 영숫자. 비우면 멘션 없이 발송.
+        if val and not (len(val) >= 2 and val[0] in ('U', 'W') and val[1:].isalnum()):
+            return JsonResponse({'error': 'Slack member ID 형식이 아님 (예: U01ABCDEF)'}, status=400)
+        to_save['slack_mention_user_id'] = val
     int_fields = {
         'notify_start_hour': (0, 23),
-        'notify_interval_hours': (1, 24),
-        'notify_count': (0, 24),
+        'notify_start_minute': (0, 59),
+        'notify_interval_minutes': (1, 1440),
+        'notify_count': (0, 48),
     }
     for k, (lo, hi) in int_fields.items():
         if k in data:
@@ -1519,6 +1585,12 @@ def settings_view(request):
     if any(k in to_save for k in int_fields):
         _regenerate_crontab()
     s['notify_hours_preview'] = compute_notify_hours(s)
+    # Mask admin-only secrets in response too
+    for k in ADMIN_ONLY_SETTING_KEYS:
+        v = s.get(k, '')
+        s[f'{k}_present'] = bool(v)
+        if not is_admin:
+            s[k] = ''
     # echo back per-user values too (for the same merge logic as GET)
     u = _current_user(request)
     if u and isinstance(u.preferences, dict):
@@ -1532,7 +1604,7 @@ def settings_view(request):
 @require_http_methods(['POST'])
 def run_notify(request):
     """대시보드 '🚀 지금 실행' 버튼용. 실제 cron이 부르는 그 명령(`manage.py notify`)을
-    그대로 호출. 오늘 일기/Opic 완료 상태에 따라 ntfy 발송 OR 스킵 응답."""
+    그대로 호출. 오늘 일기/Opic 완료 상태에 따라 Slack 발송 OR 스킵 응답."""
     from io import StringIO
     from django.core.management import call_command
 
@@ -1585,16 +1657,17 @@ def _notify_log_mtime() -> str | None:
 @csrf_exempt
 @require_http_methods(['POST'])
 def test_notify(request):
-    """현재 저장된 ntfy 토픽으로 테스트 푸시 발송.
+    """현재 저장된 Slack webhook으로 테스트 알림 발송.
     POST body로 custom 포맷 지정 가능:
-      {"title": "...", "message": "...", "tags": ["books", ...]}
+      {"title": "...", "message": "..."}
     필드 비우면 기본 메시지/제목 사용."""
-    from .mailer import send_via_ntfy, MailerError
+    from .mailer import send_via_slack, MailerError
 
     s = get_settings()
-    ntfy_topic = (s.get('ntfy_topic') or '').strip()
-    if not ntfy_topic:
-        return JsonResponse({'error': 'ntfy 토픽을 먼저 설정하세요'}, status=400)
+    webhook_url = (s.get('slack_webhook_url') or '').strip()
+    mention_user_id = (s.get('slack_mention_user_id') or '').strip()
+    if not webhook_url:
+        return JsonResponse({'error': 'Slack webhook URL을 먼저 admin 페이지에서 설정하세요'}, status=400)
 
     # tunnel URL 우선
     from pathlib import Path
@@ -1613,7 +1686,6 @@ def test_notify(request):
         data = {}
     custom_title = (data.get('title') or '').strip()
     custom_message = (data.get('message') or '').strip()
-    custom_tags = data.get('tags') if isinstance(data.get('tags'), list) else None
 
     title = custom_title or '🌙 매일 영어 — 테스트 알림'
     if custom_message:
@@ -1633,18 +1705,18 @@ def test_notify(request):
         message = build_notification_body(status_line)
 
     try:
-        result = send_via_ntfy(
-            topic=ntfy_topic,
+        result = send_via_slack(
+            webhook_url=webhook_url,
             title=title,
             message=message,
             click_url=site_url,
-            tags=custom_tags or ['white_check_mark'],
+            mention_user_id=mention_user_id or None,
         )
         return JsonResponse({
             'status': 'sent',
-            'topic': result['topic'],
-            'method': 'ntfy',
+            'method': 'slack',
             'via': result['host'],
+            'mention': bool(mention_user_id),
         })
     except MailerError as e:
         return JsonResponse({'error': str(e), 'type': 'mailer_error'}, status=500)

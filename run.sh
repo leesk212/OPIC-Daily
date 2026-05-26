@@ -41,12 +41,11 @@ fi
 
 mkdir -p data
 
-# ⚙️ 설정에 저장된 알림 스케줄을 호스트 user crontab에 자동 등록.
-# macOS crontab이 권한 prompt 등으로 가끔 멈춰서 서버 시작이 막히는 일이
-# 있어 백그라운드로 fire-and-forget. 결과는 data/install-cron.log에 남음.
+# 🕐 알림은 Django 프로세스 안의 내부 스케줄러(api/scheduler.py)가 담당.
+# macOS host cron이 권한/sleep 이슈로 불안정하다는 보고가 있어 host crontab 등록은 비활성화.
+# 기존에 등록된 OPIC-Daily cron 라인이 있으면 한 번만 제거 시도 (이중 발사 방지).
 if command -v crontab &> /dev/null; then
-  ( ./install-cron.sh --quiet > data/install-cron.log 2>&1 || true ) &
-  echo "🕐 cron 등록 백그라운드 진행 중 (결과: tail data/install-cron.log)"
+  ( ./install-cron.sh --remove > data/install-cron.log 2>&1 || true ) &
 fi
 
 # 포트 사용 중이면 자동으로 정리 시도
@@ -139,4 +138,6 @@ echo ""
                command -v xdg-open >/dev/null && xdg-open "http://localhost:$PORT")) &
 
 # Django를 foreground로 (Ctrl+C로 종료하면 위 cleanup이 tunnel도 정리)
-python manage.py runserver "0.0.0.0:$PORT"
+# --noreload: autoreloader가 부모/자식 2개 프로세스를 띄워서 scheduler thread가
+# 두 번 시작 → 알림 2개씩 발사되는 문제를 막음. 코드 변경 후엔 ./run.sh 재실행 필요.
+python manage.py runserver --noreload "0.0.0.0:$PORT"

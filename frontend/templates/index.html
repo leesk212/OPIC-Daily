@@ -3284,6 +3284,7 @@
         </div>
         <nav class="admin-nav">
           <button class="admin-nav-item active" data-admin-section="users">👥 사용자</button>
+          <button class="admin-nav-item" data-admin-section="slack">🔔 Slack 알림</button>
           <button class="admin-nav-item" data-admin-section="ai-fetch">🤖 AI 생성</button>
           <button class="admin-nav-item" data-admin-section="extract">📎 자료 추출</button>
           <button class="admin-nav-item" data-admin-section="expressions">💬 표현 <span class="admin-nav-count" id="adm-count-expr">…</span></button>
@@ -3312,6 +3313,66 @@
           <div class="admin-card">
             <div class="admin-card-title">📋 사용자 목록 · <span id="admin-user-count">0</span>명</div>
             <div class="admin-user-list" id="admin-user-list"></div>
+          </div>
+        </div>
+
+        <!-- ===== Slack Notifications ===== -->
+        <div class="admin-section-panel" data-admin-panel="slack" hidden>
+          <h2 class="admin-section-title">🔔 Slack 알림 설정</h2>
+
+          <div class="admin-card">
+            <div class="admin-card-title">📡 Incoming Webhook URL</div>
+            <div class="admin-card-sub" style="line-height:1.65;">
+              Slack app의 Incoming Webhook으로 알림이 전송됩니다. URL을 한 번 등록하면 cron이 정해진 시각마다 자동 발송.
+            </div>
+
+            <div class="settings-row" style="margin-top:14px;">
+              <label>Webhook URL (<code>https://hooks.slack.com/...</code>)</label>
+              <input type="url" class="login-input" id="adm-slack-webhook" placeholder="https://hooks.slack.com/services/T.../B.../..." style="text-align:left; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12px;">
+              <div class="hint" id="adm-slack-status" style="margin-top:6px;">상태 확인 중…</div>
+            </div>
+
+            <div class="settings-row" style="margin-top:14px;">
+              <label>📱 Mention member ID (Android 푸시 강제용, 선택)</label>
+              <input type="text" class="login-input" id="adm-slack-mention" placeholder="U01ABCDEF" style="text-align:left; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:13px;">
+              <div class="hint" style="margin-top:6px; line-height:1.65;">
+                Slack 모바일/데스크탑 앱 → 본인 프로필 클릭 → <strong>More (⋯)</strong> → <strong>Copy member ID</strong>로 획득.<br>
+                입력하면 모든 알림 앞에 <code>&lt;@ID&gt;</code> 멘션이 박혀 데스크탑 활성 여부와 무관하게 모바일 푸시가 옵니다.
+              </div>
+            </div>
+
+            <div class="admin-fetch-row" style="margin-top:14px;">
+              <button class="cta-submit" id="adm-slack-save">💾 저장</button>
+              <button class="ghost-btn" id="adm-slack-test" style="padding:9px 14px;">📲 익명 테스트</button>
+            </div>
+            <div class="admin-result" id="adm-slack-result" hidden></div>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-title">👤 특정 user 기준으로 테스트 발송</div>
+            <div class="admin-card-sub" style="line-height:1.65;">선택한 user의 오늘 일기/Opic 완료 여부 + 본인 라벨이 메시지에 들어갑니다.</div>
+            <div class="settings-row" style="margin-top:12px;">
+              <label>대상 user</label>
+              <select id="adm-slack-test-user" style="width:100%; padding:8px 10px; background:var(--card-2); border:1px solid var(--border); color:var(--text); border-radius:8px; font-size:13.5px;">
+                <option value="">(불러오는 중…)</option>
+              </select>
+            </div>
+            <div class="admin-fetch-row" style="margin-top:12px;">
+              <button class="ghost-btn" id="adm-slack-test-as-user" style="padding:9px 14px;">📲 이 user 기준으로 테스트</button>
+            </div>
+            <div class="admin-result" id="adm-slack-user-result" hidden></div>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-title">🧭 Slack app 만드는 법</div>
+            <ol style="font-size:12.5px; color:var(--text-2); line-height:1.85; padding-left:20px; margin:6px 0;">
+              <li><a href="https://api.slack.com/apps" target="_blank" style="color:var(--opic);">api.slack.com/apps</a> → <strong>Create New App</strong> → From scratch</li>
+              <li>App 이름 + 워크스페이스 선택</li>
+              <li>좌측 메뉴 <strong>Incoming Webhooks</strong> → <strong>Activate</strong> ON</li>
+              <li>하단 <strong>Add New Webhook to Workspace</strong> → 알림 받을 채널 선택 → Allow</li>
+              <li>발급된 URL (<code>https://hooks.slack.com/services/...</code>)을 위 입력란에 붙여넣고 저장</li>
+            </ol>
+            <div class="admin-card-sub" style="margin-top:6px;">📌 URL은 노출되면 누구나 채널에 메시지 보낼 수 있으니 외부 공유 금지.</div>
           </div>
         </div>
 
@@ -3718,22 +3779,10 @@
       <div id="opic-topic-msg" style="margin-top:8px; font-size:12px; color:var(--muted); min-height:18px;"></div>
     </div>
 
-    <div style="border-left:3px solid var(--opic); padding:14px 16px; background:var(--opic-soft); border-radius:8px; margin-bottom:18px;">
-      <div style="font-size:11px; color:var(--opic); font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px;">
-        ⚡ ntfy.sh 푸시 알림
-      </div>
-      <div style="font-size:12px; color:var(--text-2); line-height:1.65; margin-bottom:12px;">
-        가입/인증 불필요. 토픽 이름만 정하고 휴대폰 ntfy 앱에서 같은 이름 구독하면 끝.
-      </div>
-      <div class="settings-row" style="margin-bottom:8px;">
-        <label>토픽 이름 (남이 못 맞출 만한 걸로)</label>
-        <input type="text" id="set-ntfy-topic" placeholder="opic-daily-leesk212-7n3xq">
-        <div class="hint" id="ntfy-topic-hint" style="margin-top:6px;"></div>
-      </div>
-      <div style="font-size:11px; color:var(--text-2); line-height:1.7; margin-top:10px; padding-top:10px; border-top:1px dashed rgba(96,165,250,0.3);">
-        📱 <strong>휴대폰:</strong> App Store/Play Store에서 "<a href="https://ntfy.sh/app" target="_blank" style="color:var(--opic);">ntfy</a>" 검색 → 설치 → "+" 눌러서 위와 같은 토픽 이름 구독<br>
-        💻 <strong>데스크탑:</strong> 위 토픽 URL을 브라우저로 열어두면 알림 받음
-      </div>
+    <div id="slack-status-banner" style="border-left:3px solid var(--opic); padding:12px 14px; background:var(--opic-soft); border-radius:8px; margin-bottom:18px; font-size:12.5px; color:var(--text-2); line-height:1.6;">
+      <div style="font-weight:700; color:var(--opic); margin-bottom:4px;">🔔 알림 채널: Slack</div>
+      <div id="slack-status-msg">상태 확인 중…</div>
+      <div style="margin-top:6px; font-size:11px; color:var(--muted);">Webhook URL 설정은 admin 페이지 → 🔔 Slack 알림에서.</div>
     </div>
 
     <!-- ===== 알림 스케줄 (cron) ===== -->
@@ -3746,20 +3795,21 @@
       </div>
       <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
         <div class="settings-row" style="margin:0;">
-          <label>시작 시각 (0–23)</label>
-          <input type="number" id="set-notify-start-hour" min="0" max="23" step="1" value="23">
+          <label>시작 시각 (HH:MM)</label>
+          <input type="time" id="set-notify-start-time" value="23:00">
         </div>
         <div class="settings-row" style="margin:0;">
-          <label>간격 (시간)</label>
-          <input type="number" id="set-notify-interval-hours" min="1" max="24" step="1" value="1">
+          <label>간격 (분, 1–1440)</label>
+          <input type="number" id="set-notify-interval-minutes" min="1" max="1440" step="5" value="60">
         </div>
         <div class="settings-row" style="margin:0;">
-          <label>횟수</label>
-          <input type="number" id="set-notify-count" min="0" max="24" step="1" value="1">
+          <label>횟수 (0–48)</label>
+          <input type="number" id="set-notify-count" min="0" max="48" step="1" value="1">
         </div>
       </div>
       <div id="notify-hours-preview" style="margin-top:10px; font-size:12.5px; color:var(--accent); font-weight:600;"></div>
-      <div style="margin-top:6px; font-size:11px; color:var(--muted);">횟수=0 이면 알림 비활성화. 24시 넘어가는 시간은 자동 제외.</div>
+      <div id="next-notify-countdown" style="margin-top:4px; font-size:12.5px; color:var(--text-2); font-weight:600;"></div>
+      <div style="margin-top:6px; font-size:11px; color:var(--muted);">횟수=0 이면 알림 비활성화. 24시(자정) 넘어가는 슬롯은 자동 제외.</div>
 
       <div class="settings-row" style="margin-top:14px;">
         <label>👤 알림 대상 user (이 user의 일기/Opic 완료 여부로 판단)</label>
@@ -3786,22 +3836,22 @@
       </div>
     </div>
 
-    <details style="margin-top:18px; padding:12px 14px; background:var(--card-2); border:1px solid var(--border); border-radius:8px;">
-      <summary style="cursor:pointer; font-size:12px; font-weight:600; color:var(--text-2);">📲 테스트 알림 커스터마이즈 (선택)</summary>
-      <div class="settings-row" style="margin-top:10px;">
-        <label>제목</label>
-        <input type="text" id="set-test-title" placeholder="🌙 매일 영어 — 테스트 알림">
-      </div>
-      <div class="settings-row" style="margin-top:8px;">
-        <label>본문 (여러 줄)</label>
-        <textarea id="set-test-message" rows="3" placeholder="비우면 기본 (표현+명언 자동 합성)" style="width:100%; padding:8px 10px; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:8px; font-size:13px; font-family:inherit; resize:vertical;"></textarea>
-      </div>
-      <div class="settings-row" style="margin-top:8px;">
-        <label>ntfy 태그 (쉼표 구분, 예: <code>books, white_check_mark</code>)</label>
-        <input type="text" id="set-test-tags" placeholder="white_check_mark">
-      </div>
-      <div class="hint" style="margin-top:6px;">제목·본문·태그 모두 비우면 기본 포맷으로 발송. 입력한 필드만 override.</div>
-    </details>
+    <div style="margin-top:18px; padding:14px 16px; background:var(--card-2); border:1px solid var(--border); border-radius:8px;">
+      <div style="font-size:13px; font-weight:600; color:var(--text); margin-bottom:4px;">📲 본인 기준으로 Slack 테스트 알림 보내기</div>
+      <div id="settings-test-who" style="font-size:11.5px; color:var(--muted); margin-bottom:10px;">로그인 user 기준으로 status_line + 표현/명언이 합성되어 Slack 채널로 발송됩니다.</div>
+      <details>
+        <summary style="cursor:pointer; font-size:11.5px; font-weight:600; color:var(--text-2); margin-bottom:8px;">✏️ 메시지 커스터마이즈 (선택)</summary>
+        <div class="settings-row" style="margin-top:10px;">
+          <label>제목</label>
+          <input type="text" id="set-test-title" placeholder="🌙 매일 영어 — 테스트 알림">
+        </div>
+        <div class="settings-row" style="margin-top:8px;">
+          <label>본문 (여러 줄)</label>
+          <textarea id="set-test-message" rows="3" placeholder="비우면 기본 (표현+명언 자동 합성)" style="width:100%; padding:8px 10px; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:8px; font-size:13px; font-family:inherit; resize:vertical;"></textarea>
+        </div>
+        <div class="hint" style="margin-top:6px;">제목·본문 모두 비우면 기본 포맷으로 발송. 입력한 필드만 override.</div>
+      </details>
+    </div>
 
     <div class="settings-actions">
       <button class="ghost-btn" id="settings-test">📲 테스트 알림</button>
@@ -7970,6 +8020,146 @@ Now output ONLY the JSON object:`;
     if (name === 'expressions') renderAdmExpressions();
     else if (name === 'quotes') renderAdmQuotes();
     else if (name === 'combos') renderAdmCombos();
+    else if (name === 'slack') loadAdminSlackSettings();
+  }
+
+  async function loadAdminSlackSettings() {
+    const input = document.getElementById('adm-slack-webhook');
+    const mentionInput = document.getElementById('adm-slack-mention');
+    const status = document.getElementById('adm-slack-status');
+    const res = document.getElementById('adm-slack-result');
+    if (!input || !status) return;
+    status.textContent = '불러오는 중…';
+    if (res) res.hidden = true;
+    try {
+      const r = await adminFetch('/api/settings/');
+      const s = await r.json();
+      if (!r.ok) throw new Error(s.error || `HTTP ${r.status}`);
+      input.value = s.slack_webhook_url || '';
+      if (mentionInput) mentionInput.value = s.slack_mention_user_id || '';
+      status.innerHTML = s.slack_webhook_url_present
+        ? '✅ Webhook URL 등록됨' + (s.slack_mention_user_id_present ? ' · 📱 멘션 ON' : '')
+        : '⚠️ 아직 등록되지 않았습니다';
+    } catch (e) {
+      status.textContent = '불러오기 실패: ' + e.message;
+    }
+    populateAdminSlackUserDropdown();
+  }
+
+  async function populateAdminSlackUserDropdown() {
+    const sel = document.getElementById('adm-slack-test-user');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">(불러오는 중…)</option>';
+    try {
+      const r = await adminFetch('/api/admin/users/');
+      const data = await r.json();
+      const users = data.users || [];
+      sel.innerHTML = '';
+      if (!users.length) {
+        sel.innerHTML = '<option value="">등록된 user 없음</option>';
+        return;
+      }
+      for (const u of users) {
+        const opt = document.createElement('option');
+        opt.value = u.username;
+        opt.textContent = `${u.username}${u.displayName ? ' (' + u.displayName + ')' : ''}`;
+        sel.appendChild(opt);
+      }
+    } catch (e) {
+      sel.innerHTML = `<option value="">로드 실패</option>`;
+    }
+  }
+
+  function showAdmSlackUserResult(msg, ok) {
+    const el = document.getElementById('adm-slack-user-result');
+    if (!el) return;
+    el.innerHTML = msg;
+    el.style.color = ok ? 'var(--success, #4ade80)' : 'var(--err, #f87171)';
+    el.hidden = false;
+  }
+
+  async function testAdminSlackAsUser() {
+    const sel = document.getElementById('adm-slack-test-user');
+    const username = (sel && sel.value || '').trim();
+    if (!username) {
+      showAdmSlackUserResult('❌ user를 선택하세요.', false);
+      return;
+    }
+    showAdmSlackUserResult(`📤 ${username} 기준으로 Slack 발송 중…`, true);
+    try {
+      const r = await fetch('/api/test-notify/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': username,
+        },
+        body: '{}',
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      showAdmSlackUserResult(`✅ Slack 발송 완료 — <strong>${username}</strong> 기준. 채널을 확인하세요.`, true);
+    } catch (e) {
+      showAdmSlackUserResult('❌ 발송 실패: ' + e.message, false);
+    }
+  }
+
+  function showAdmSlackResult(msg, ok) {
+    const el = document.getElementById('adm-slack-result');
+    if (!el) return;
+    el.innerHTML = msg;
+    el.style.color = ok ? 'var(--success, #4ade80)' : 'var(--err, #f87171)';
+    el.hidden = false;
+  }
+
+  async function saveAdminSlackSettings() {
+    const input = document.getElementById('adm-slack-webhook');
+    const mentionInput = document.getElementById('adm-slack-mention');
+    const status = document.getElementById('adm-slack-status');
+    const url = (input.value || '').trim();
+    const mentionId = (mentionInput && mentionInput.value || '').trim();
+    if (url && !url.startsWith('https://hooks.slack.com/')) {
+      showAdmSlackResult('❌ Slack Incoming Webhook URL 형식이 아닙니다.', false);
+      return;
+    }
+    if (mentionId && !/^[UW][A-Z0-9]+$/.test(mentionId)) {
+      showAdmSlackResult('❌ Slack member ID 형식이 아닙니다 (예: U01ABCDEF).', false);
+      return;
+    }
+    showAdmSlackResult('💾 저장 중…', true);
+    try {
+      const r = await adminFetch('/api/settings/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slack_webhook_url: url,
+          slack_mention_user_id: mentionId,
+        }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      status.innerHTML = data.slack_webhook_url_present
+        ? '✅ Webhook URL 등록됨' + (data.slack_mention_user_id_present ? ' · 📱 멘션 ON' : '')
+        : '⚠️ 비워둠 (알림 발송 안 됨)';
+      showAdmSlackResult('✅ 저장 완료', true);
+    } catch (e) {
+      showAdmSlackResult('❌ 저장 실패: ' + e.message, false);
+    }
+  }
+
+  async function testAdminSlack() {
+    showAdmSlackResult('📤 Slack으로 발송 중…', true);
+    try {
+      const r = await fetch('/api/test-notify/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      showAdmSlackResult('✅ Slack 발송 완료 — 채널을 확인하세요.', true);
+    } catch (e) {
+      showAdmSlackResult('❌ 발송 실패: ' + e.message, false);
+    }
   }
 
   async function loadAdminCatalogs() {
@@ -8477,6 +8667,9 @@ Now output ONLY the JSON object:`;
   });
   document.getElementById('admin-fetch-submit').addEventListener('click', adminFetchSubmit);
   document.getElementById('admin-extract-submit').addEventListener('click', adminExtractExpressions);
+  document.getElementById('adm-slack-save').addEventListener('click', saveAdminSlackSettings);
+  document.getElementById('adm-slack-test').addEventListener('click', testAdminSlack);
+  document.getElementById('adm-slack-test-as-user').addEventListener('click', testAdminSlackAsUser);
   // 📎 source tabs (URL / text / file) — only the ones inside extract section
   document.querySelectorAll('.admin-source-tab[data-src-tab]').forEach(tab => {
     tab.addEventListener('click', () => setAdminExtractMode(tab.dataset.srcTab));
@@ -8654,15 +8847,63 @@ Now output ONLY the JSON object:`;
     setTimeout(updateTopicCounter, 1800);
   }
 
-  function renderHoursPreview(hours) {
+  function renderSlotsPreview(slots) {
     const el = document.getElementById('notify-hours-preview');
-    if (!Array.isArray(hours) || hours.length === 0) {
+    if (!Array.isArray(slots) || slots.length === 0) {
       el.textContent = '⚠️ 알림 비활성화';
       el.style.color = 'var(--muted)';
-    } else {
-      el.textContent = `📅 다음 시각에 알림: ${hours.map(h => h.toString().padStart(2, '0') + ':00').join(', ')}`;
-      el.style.color = 'var(--accent)';
+      renderNextNotifyCountdown([]);
+      return;
     }
+    const fmt = s => String(s.h).padStart(2, '0') + ':' + String(s.m).padStart(2, '0');
+    el.textContent = `📅 알림 슬롯: ${slots.map(fmt).join(', ')}`;
+    el.style.color = 'var(--accent)';
+    renderNextNotifyCountdown(slots);
+  }
+
+  // Back-compat shim — older callers may still pass hour-only arrays.
+  function renderHoursPreview(hours) {
+    if (Array.isArray(hours) && hours.length && typeof hours[0] === 'number') {
+      renderSlotsPreview(hours.map(h => ({ h, m: 0 })));
+    } else {
+      renderSlotsPreview(hours);
+    }
+  }
+
+  function _minutesUntilNext(slots) {
+    if (!Array.isArray(slots) || slots.length === 0) return null;
+    const now = new Date();
+    const candidates = [];
+    for (const s of slots) {
+      const today = new Date(now); today.setHours(s.h, s.m, 0, 0);
+      if (today > now) candidates.push(today);
+      const tom = new Date(now); tom.setDate(tom.getDate() + 1); tom.setHours(s.h, s.m, 0, 0);
+      candidates.push(tom);
+    }
+    candidates.sort((a, b) => a - b);
+    const next = candidates[0];
+    const diffMs = next - now;
+    return { next, minutes: Math.max(0, Math.round(diffMs / 60000)) };
+  }
+
+  let _nextNotifyInterval = null;
+  function renderNextNotifyCountdown(slots) {
+    const el = document.getElementById('next-notify-countdown');
+    if (!el) return;
+    if (_nextNotifyInterval) { clearInterval(_nextNotifyInterval); _nextNotifyInterval = null; }
+    const update = () => {
+      const info = _minutesUntilNext(slots);
+      if (!info) { el.textContent = ''; return; }
+      const hh = info.next.getHours().toString().padStart(2, '0');
+      const mm = info.next.getMinutes().toString().padStart(2, '0');
+      const tag = info.minutes < 60
+        ? `<strong>${info.minutes}분 후</strong>`
+        : `<strong>${Math.floor(info.minutes/60)}시간 ${info.minutes%60}분 후</strong>`;
+      const dayLabel = info.next.toDateString() === new Date().toDateString() ? '오늘' : '내일';
+      el.innerHTML = `⏰ 다음 알림: ${dayLabel} ${hh}:${mm} · ${tag}`;
+    };
+    update();
+    _nextNotifyInterval = setInterval(update, 30 * 1000);
   }
   function renderLastNotifyRun(iso) {
     const el = document.getElementById('last-notify-run');
@@ -8701,24 +8942,26 @@ Now output ONLY the JSON object:`;
       btn.disabled = false; btn.textContent = origLabel;
     }
   }
-  function computeHoursClient(startH, intervalH, count) {
-    const s = Math.max(0, Math.min(23, parseInt(startH, 10) || 0));
-    const i = Math.max(1, Math.min(24, parseInt(intervalH, 10) || 1));
-    const n = Math.max(0, Math.min(24, parseInt(count, 10) || 0));
+  function computeSlotsClient(startTime, intervalMin, count) {
+    const [shRaw, smRaw] = (startTime || '23:00').split(':');
+    const sh = Math.max(0, Math.min(23, parseInt(shRaw, 10) || 0));
+    const sm = Math.max(0, Math.min(59, parseInt(smRaw, 10) || 0));
+    const iv = Math.max(1, Math.min(1440, parseInt(intervalMin, 10) || 60));
+    const n  = Math.max(0, Math.min(48, parseInt(count, 10) || 0));
     const out = [];
-    let h = s;
+    let cur = sh * 60 + sm;
     for (let k = 0; k < n; k++) {
-      if (h > 23) break;
-      out.push(h);
-      h += i;
+      if (cur > 23 * 60 + 59) break;
+      out.push({ h: Math.floor(cur / 60), m: cur % 60 });
+      cur += iv;
     }
     return out;
   }
   function bindScheduleInputsLive() {
-    const ids = ['set-notify-start-hour', 'set-notify-interval-hours', 'set-notify-count'];
-    const updater = () => renderHoursPreview(computeHoursClient(
-      document.getElementById('set-notify-start-hour').value,
-      document.getElementById('set-notify-interval-hours').value,
+    const ids = ['set-notify-start-time', 'set-notify-interval-minutes', 'set-notify-count'];
+    const updater = () => renderSlotsPreview(computeSlotsClient(
+      document.getElementById('set-notify-start-time').value,
+      document.getElementById('set-notify-interval-minutes').value,
       document.getElementById('set-notify-count').value
     ));
     ids.forEach(id => {
@@ -8743,28 +8986,27 @@ Now output ONLY the JSON object:`;
       pickerSelected = new Set(serverSel);
       renderOpicTopicPicker();
 
-      document.getElementById('set-ntfy-topic').value = s.ntfy_topic || '';
       document.getElementById('set-site-url').value = s.site_url || 'http://localhost:8000';
-      document.getElementById('set-notify-start-hour').value = (s.notify_start_hour != null ? s.notify_start_hour : 23);
-      document.getElementById('set-notify-interval-hours').value = (s.notify_interval_hours != null ? s.notify_interval_hours : 1);
+      const sh = (s.notify_start_hour != null ? s.notify_start_hour : 23);
+      const sm = (s.notify_start_minute != null ? s.notify_start_minute : 0);
+      document.getElementById('set-notify-start-time').value =
+        String(sh).padStart(2, '0') + ':' + String(sm).padStart(2, '0');
+      document.getElementById('set-notify-interval-minutes').value = (s.notify_interval_minutes != null ? s.notify_interval_minutes : 60);
       document.getElementById('set-notify-count').value = (s.notify_count != null ? s.notify_count : 1);
-      renderHoursPreview(s.notify_hours_preview);
+      renderSlotsPreview(s.notify_slots_preview);
       renderLastNotifyRun(s.last_notify_run);
       await populateNotifyUserDropdown(s.notify_user || '');
 
-      const ntfyHint = document.getElementById('ntfy-topic-hint');
-      if (s.ntfy_topic) {
-        const url = `https://ntfy.sh/${s.ntfy_topic}`;
-        ntfyHint.innerHTML = `📡 토픽 URL: <a href="${url}" target="_blank" style="color:var(--opic);">${url}</a>`;
-      } else {
-        ntfyHint.innerHTML = '비우면 ntfy 사용 안 함. <button type="button" id="gen-topic" style="background:transparent; border:1px solid var(--border); color:var(--opic); padding:2px 8px; border-radius:5px; cursor:pointer; font-size:11px;">랜덤 생성</button>';
-        setTimeout(() => {
-          const btn = document.getElementById('gen-topic');
-          if (btn) btn.addEventListener('click', () => {
-            const rand = Math.random().toString(36).slice(2, 8);
-            document.getElementById('set-ntfy-topic').value = `opic-daily-${rand}`;
-          });
-        }, 50);
+      const slackMsg = document.getElementById('slack-status-msg');
+      if (slackMsg) {
+        slackMsg.innerHTML = s.slack_webhook_url_present
+          ? '✅ Webhook URL 등록됨 · 알림 정상 발송'
+          : '⚠️ Webhook URL 미등록 · 알림이 발송되지 않습니다';
+      }
+      const who = (state.currentUser && (state.currentUser.displayName || state.currentUser.username)) || '(미로그인)';
+      const whoEl = document.getElementById('settings-test-who');
+      if (whoEl) {
+        whoEl.innerHTML = `발송 기준: <strong style="color:var(--text);">${who}</strong>의 오늘 일기/Opic 완료 여부 + 본인 라벨이 포함됩니다.`;
       }
       // tunnel URL이 떠 있으면 hint에 표시
       const hint = document.getElementById('tunnel-hint');
@@ -8783,6 +9025,7 @@ Now output ONLY the JSON object:`;
   }
   function closeSettingsModal() {
     document.getElementById('settings-modal').classList.remove('show');
+    if (_nextNotifyInterval) { clearInterval(_nextNotifyInterval); _nextNotifyInterval = null; }
   }
   function showSettingsResult(msg, ok) {
     const el = document.getElementById('settings-result');
@@ -8798,12 +9041,14 @@ Now output ONLY the JSON object:`;
       return;
     }
     const topics = Array.from(pickerSelected);
+    const startTime = document.getElementById('set-notify-start-time').value || '23:00';
+    const [sh, sm] = startTime.split(':').map(x => parseInt(x, 10) || 0);
     const body = {
       site_url: document.getElementById('set-site-url').value.trim(),
-      ntfy_topic: document.getElementById('set-ntfy-topic').value.trim(),
       notify_user: document.getElementById('set-notify-user').value,
-      notify_start_hour: parseInt(document.getElementById('set-notify-start-hour').value, 10),
-      notify_interval_hours: parseInt(document.getElementById('set-notify-interval-hours').value, 10),
+      notify_start_hour: sh,
+      notify_start_minute: sm,
+      notify_interval_minutes: parseInt(document.getElementById('set-notify-interval-minutes').value, 10),
       notify_count: parseInt(document.getElementById('set-notify-count').value, 10),
       opic_selected_topics: topics,
     };
@@ -8827,11 +9072,12 @@ Now output ONLY the JSON object:`;
           renderOpic();
         }
       }
-      renderHoursPreview(data.notify_hours_preview);
-      const hours = Array.isArray(data.notify_hours_preview) ? data.notify_hours_preview : [];
-      const schedMsg = hours.length === 0
+      renderSlotsPreview(data.notify_slots_preview);
+      const slots = Array.isArray(data.notify_slots_preview) ? data.notify_slots_preview : [];
+      const fmt = s => String(s.h).padStart(2, '0') + ':' + String(s.m).padStart(2, '0');
+      const schedMsg = slots.length === 0
         ? '알림 비활성화'
-        : `${hours.length}회 알림 (${hours.map(h => h + '시').join(', ')})`;
+        : `${slots.length}회 알림 (${slots.map(fmt).join(', ')})`;
       const opicMsg = selCount ? ` · OPIc ${selCount}개 활성` : ' · OPIc 전체 토픽';
       showSettingsResult(`✅ 저장됨 · ${schedMsg}${opicMsg}`, true);
     } catch (e) {
@@ -8872,27 +9118,25 @@ Now output ONLY the JSON object:`;
   }
 
   async function testNotifyNow() {
-    showSettingsResult('📤 발송 중...', true);
+    showSettingsResult('📤 Slack으로 발송 중...', true);
     const title = document.getElementById('set-test-title').value.trim();
     const message = document.getElementById('set-test-message').value;  // 줄바꿈 유지
-    const tagsRaw = document.getElementById('set-test-tags').value.trim();
-    const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : null;
     const body = {};
     if (title) body.title = title;
     if (message.trim()) body.message = message;
-    if (tags && tags.length) body.tags = tags;
     try {
-      const r = await fetch('/api/test-notify/', {
+      // authFetch로 X-User-Id 헤더 자동 부착 → 백엔드가 본인 user의 일기/Opic 카운트로 status_line 합성
+      const r = await authFetch('/api/test-notify/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
-      const url = `https://ntfy.sh/${data.topic}`;
       const customNote = Object.keys(body).length ? ` <span style="color:var(--accent); font-size:11px;">· 커스텀 ${Object.keys(body).join('+')}</span>` : '';
+      const who = (state.currentUser && (state.currentUser.displayName || state.currentUser.username)) || '';
       showSettingsResult(
-        `✅ 발송 완료${customNote}<br>방식: ⚡ ntfy.sh 푸시<br>대상: <strong>${data.topic}</strong><br>📡 <a href="${url}" target="_blank" style="color:var(--opic);">${url}</a> 열어서 확인`,
+        `✅ Slack 발송 완료${customNote}<br>대상: <strong>${who || '(익명)'}</strong> 기준 · 설정한 채널을 확인하세요.`,
         true
       );
     } catch (e) {

@@ -5,6 +5,7 @@ data/db.sqlite3
 data/*.sqlite3
 data/tunnel_url.txt
 data/install-cron.log
+data/last_notify_fire.txt
 .DS_Store
 *.log
 .env

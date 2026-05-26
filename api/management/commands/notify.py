@@ -1,9 +1,9 @@
 """
-오늘 일기/Opic 안 했으면 ntfy.sh 푸시 알림 발송.
+오늘 일기/Opic 안 했으면 Slack 알림 발송.
 
 설정 우선순위:
   1. data/tunnel_url.txt (cloudflared가 띄운 URL — site_url로 사용)
-  2. DB Preference (WebUI에서 저장)
+  2. DB Preference (admin 페이지에서 저장)
   3. .env
   4. Defaults
 
@@ -19,7 +19,7 @@ from pathlib import Path
 from django.conf import settings as django_settings
 from django.core.management.base import BaseCommand
 
-from api.mailer import send_via_ntfy, MailerError
+from api.mailer import send_via_slack, MailerError
 from api.models import Entry
 from api.views import get_settings, build_notification_body, build_status_line, resolve_user_label
 
@@ -36,7 +36,7 @@ FLAVORS = [
 
 
 class Command(BaseCommand):
-    help = "Send 'come learn now' ntfy push notification"
+    help = "Send 'come learn now' Slack notification"
 
     def add_arguments(self, parser):
         parser.add_argument('--force', action='store_true', help='이미 완료해도 강제 전송')
@@ -69,11 +69,12 @@ class Command(BaseCommand):
                 self.stdout.write(f'🌐 tunnel URL 사용: {url}')
 
         site_url = (s.get('site_url') or 'http://localhost:8000').rstrip('/')
-        ntfy_topic = (s.get('ntfy_topic') or '').strip()
+        webhook_url = (s.get('slack_webhook_url') or '').strip()
+        mention_user_id = (s.get('slack_mention_user_id') or '').strip()
 
-        if not ntfy_topic:
+        if not webhook_url:
             self.stdout.write(self.style.ERROR(
-                '⚠️  ntfy_topic 설정 누락. WebUI ⚙️에서 토픽을 먼저 설정하세요.'
+                '⚠️  slack_webhook_url 설정 누락. admin 페이지에서 webhook URL을 먼저 등록하세요.'
             ))
             return
 
@@ -89,22 +90,24 @@ class Command(BaseCommand):
 
         if options['dry_run']:
             self.stdout.write('=== DRY RUN ===')
-            self.stdout.write(f'ntfy topic: {ntfy_topic}')
+            masked = webhook_url[:36] + '…' if len(webhook_url) > 36 else webhook_url
+            self.stdout.write(f'slack webhook: {masked}')
+            self.stdout.write(f'mention id: {mention_user_id or "(없음)"}')
             self.stdout.write(f'click URL: {site_url}')
             self.stdout.write(f'title: {title}')
             self.stdout.write(f'message: {message}')
             return
 
         try:
-            result = send_via_ntfy(
-                topic=ntfy_topic,
+            result = send_via_slack(
+                webhook_url=webhook_url,
                 title=title,
                 message=message,
                 click_url=site_url,
-                tags=['books'],
+                mention_user_id=mention_user_id or None,
             )
             self.stdout.write(self.style.SUCCESS(
-                f'✅ ntfy 발송 완료 → topic={result["topic"]}'
+                f'✅ Slack 발송 완료 → {result["host"]}'
             ))
         except MailerError as e:
             self.stdout.write(self.style.ERROR(f'❌ 발송 실패: {e}'))
