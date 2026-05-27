@@ -5282,23 +5282,33 @@ think outside the box
   }
   // Active pool = OPIC_COMBOS filtered by user's selected topic IDs.
   // Empty/missing selection falls back to all topics (default behavior).
-  // 콤보 → 카테고리 키워드(한국어 한 단어). 보강·AI fetch도 이 단위로 풀 관리.
-  //   '공원 (Park)' → '공원'
-  //   '기술 / AI (Technology)' → '기술'
-  //   '날씨·계절 (Weather / Seasons)' → '날씨'
-  //   '호텔-서베이' → '호텔'
+  // 콤보 → 카테고리 키워드(한국어 한 단어, 공백 없음).
+  // OPIc Background Survey 카테고리들은 띄어쓰기 없는 한 단어로 통일.
+  //   '공원 (Park)'                → '공원'
+  //   '기술 / AI (Technology)'     → '기술'
+  //   '날씨·계절 (Weather)'        → '날씨'
+  //   '호텔-서베이'                → '호텔'
+  //   '국내 여행 (Domestic Travel)' → '국내여행'   ← 공백 제거로 한 키워드 통합
+  //   '스포츠 관람 (Watching ...)'  → '스포츠관람'
   function deriveCategory(topic) {
     if (!topic) return '';
     if (typeof topic !== 'string') topic = String(topic);
-    let s = topic.split('(')[0].trim();
-    s = s.split('/')[0].trim();
-    s = s.split('-')[0].trim();
-    s = s.split('·')[0].trim();
-    s = s.split(',')[0].trim();
-    return s;
+    let s = topic.split('(')[0];   // 괄호의 영어 라벨 잘라냄
+    s = s.split('/')[0];
+    s = s.split('-')[0];
+    s = s.split('·')[0];
+    s = s.split(',')[0];
+    return s.replace(/\s+/g, '').trim();
+  }
+
+  // 사용자가 직접 입력했거나 과거에 저장된 카테고리 키도 같은 규칙으로 정규화.
+  function normalizeCategory(s) {
+    if (!s) return '';
+    return String(s).replace(/\s+/g, '').trim();
   }
   function comboCategory(c) {
-    return (c && c.category && c.category.trim()) || deriveCategory(c && c.topic);
+    const explicit = c && c.category && normalizeCategory(c.category);
+    return explicit || deriveCategory(c && c.topic);
   }
 
   // 사용자가 고른 12개 = 카테고리 키워드 set. 빈 배열이면 전체 풀.
@@ -5310,9 +5320,9 @@ think outside the box
       if (typeof v !== 'string' || !v.trim()) continue;
       const byId = OPIC_COMBOS.find(c => c.id === v);
       if (byId) out.add(comboCategory(byId));
-      else out.add(v.trim());  // 이미 카테고리 키워드라고 가정
+      else out.add(normalizeCategory(v));  // 과거 공백 포함('국내 여행')도 '국내여행'으로 통합
     }
-    return Array.from(out);
+    return Array.from(out).filter(Boolean);
   }
 
   // 마스터 카테고리 풀 — 모든 콤보(빌트인+extras)에서 unique. picker가 이 set을 보여줌.
@@ -9570,7 +9580,7 @@ Now output ONLY the JSON object:`;
         .map(i => ({
           id: i.id.trim(),
           topic: (i.topic || '').trim(),
-          category: (i.category || '').trim() || deriveCategory(i.topic || ''),
+          category: normalizeCategory(i.category) || deriveCategory(i.topic || ''),
           questions: i.questions.map(q => ({ type: q.type.trim(), text: q.text.trim() })),
         }));
       if (!items.length) throw new Error('id + 3개의 (type, text) 모두 채워진 콤보가 없어요');

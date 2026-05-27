@@ -951,7 +951,7 @@ def _combos_extras_path():
 def combos_extras_list(request):
     """Public read: returns AI-added combos. Frontend appends to its OPIC_COMBOS const.
 
-    응답 시 각 콤보에 category가 비어있으면 topic에서 자동 추출해 채운다.
+    응답 시 각 콤보의 category를 정규화(공백 제거)하고, 비어있으면 topic에서 자동 추출.
     """
     path = _combos_extras_path()
     if not path.is_file():
@@ -963,8 +963,12 @@ def combos_extras_list(request):
     if not isinstance(data, list):
         data = []
     for c in data:
-        if isinstance(c, dict) and not (c.get('category') or '').strip():
-            c['category'] = _derive_category(c.get('topic') or '')
+        if not isinstance(c, dict):
+            continue
+        cat = _normalize_category(c.get('category') or '')
+        if not cat:
+            cat = _derive_category(c.get('topic') or '')
+        c['category'] = cat
     return JsonResponse({'combos': data})
 
 
@@ -995,9 +999,10 @@ def admin_combos_fetch(request):
         existing_ids_in = []
     existing_lower = {str(x).strip().lower() for x in existing_ids_in if str(x).strip()}
 
-    # 사용자가 고른 카테고리 풀 안에서만 생성하도록 prompt에 명시.
+    # 사용자가 고른 카테고리 풀 안에서만 생성하도록 prompt에 명시. 공백 제거 정규화.
     allowed_cats_in = data.get('allowed_categories') or []
-    allowed_cats = [str(c).strip() for c in allowed_cats_in if isinstance(c, str) and c.strip()]
+    allowed_cats = [_normalize_category(c) for c in allowed_cats_in if isinstance(c, str) and c.strip()]
+    allowed_cats = [c for c in allowed_cats if c]
     allowed_str = ', '.join(f'"{c}"' for c in allowed_cats) if allowed_cats else '(no restriction)'
 
     # Merge with whatever we already have in extras file
@@ -1060,6 +1065,7 @@ def admin_combos_fetch(request):
             skipped_bad += 1; continue
         if cid.lower() in existing_lower:
             skipped_dup += 1; continue
+        category = _normalize_category(category)
         if not category:
             category = _derive_category(topic)
         # 사용자가 카테고리 제약을 걸었다면 그 안에 없는 콤보는 풀에 안 넣음.
@@ -1710,19 +1716,35 @@ Output ONLY the JSON array:"""
 
 
 def _derive_category(topic: str) -> str:
-    """콤보 topic에서 한국어 카테고리 키워드 자동 추출.
-    '공원 (Park)' → '공원' / '기술 / AI (Technology)' → '기술' /
-    '호텔-서베이' → '호텔' / '날씨·계절' → '날씨'.
+    """콤보 topic에서 한국어 카테고리 키워드 자동 추출. 공백 없는 한 단어로 정규화.
+    OPIc Background Survey 카테고리는 띄어쓰기 없이 통일.
+
+      '공원 (Park)'                → '공원'
+      '기술 / AI (Technology)'     → '기술'
+      '날씨·계절 (Weather)'        → '날씨'
+      '호텔-서베이'                → '호텔'
+      '국내 여행 (Domestic Travel)' → '국내여행'    ← 공백 제거 → 한 키워드 통합
+      '스포츠 관람 (Watching ...)'  → '스포츠관람'
+
     Frontend의 deriveCategory()와 동일 규칙.
     """
     if not topic:
         return ''
-    s = topic.split('(', 1)[0].strip()
-    s = s.split('/', 1)[0].strip()
-    s = s.split('-', 1)[0].strip()
-    s = s.split('·', 1)[0].strip()
-    s = s.split(',', 1)[0].strip()
-    return s
+    import re
+    s = topic.split('(', 1)[0]
+    s = s.split('/', 1)[0]
+    s = s.split('-', 1)[0]
+    s = s.split('·', 1)[0]
+    s = s.split(',', 1)[0]
+    return re.sub(r'\s+', '', s).strip()
+
+
+def _normalize_category(s) -> str:
+    """사용자 입력 / 과거 저장값에서 공백 제거하여 한 키워드로."""
+    if not s:
+        return ''
+    import re
+    return re.sub(r'\s+', '', str(s)).strip()
 
 
 def _parse_raw_combos(text: str) -> list[dict]:
@@ -1813,11 +1835,13 @@ def admin_combos_from_notes(request):
 
     # 허용 카테고리 — frontend가 사용자 선택을 넘기면 그 안에서만 생성하도록 prompt에 명시.
     allowed_cats_in = data.get('allowed_categories') or []
-    allowed_cats = [str(c).strip() for c in allowed_cats_in if isinstance(c, str) and c.strip()]
+    allowed_cats = [_normalize_category(c) for c in allowed_cats_in if isinstance(c, str) and c.strip()]
+    allowed_cats = [c for c in allowed_cats if c]
 
     if mode == 'raw':
         items = _parse_raw_combos(text[:30000])
         for it in items:
+            it['category'] = _normalize_category(it.get('category')) or _derive_category(it.get('topic') or '')
             it['already_in_library'] = it['id'].lower() in existing_lower
         return JsonResponse({'status': 'ok', 'mode': 'raw', 'items': items})
 
@@ -1868,6 +1892,7 @@ def admin_combos_from_notes(request):
             qs.append({'type': qtype[:30], 'text': qtext[:600]})
         if len(qs) != 3:
             continue
+        category = _normalize_category(category)
         if not category:
             category = _derive_category(topic)
         cleaned.append({
@@ -1948,6 +1973,7 @@ def admin_combos_save_notes(request):
         if cid.lower() in existing_lower:
             skipped_dup += 1; continue
         existing_lower.add(cid.lower())
+        category = _normalize_category(category)
         if not category:
             category = _derive_category(topic)
         added.append({'id': cid, 'topic': topic, 'category': category, 'questions': ok_qs})
