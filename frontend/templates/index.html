@@ -389,6 +389,148 @@
     margin-bottom: 16px;
     line-height: 1.55;
   }
+  /* === enrich preview cards === */
+  .enrich-row {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1.4fr 1fr 0.7fr auto;
+    gap: 6px;
+    align-items: start;
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+  }
+  .enrich-row:first-child { border-top: none; }
+  .enrich-row input, .enrich-row textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 12.5px;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: vertical;
+  }
+  .enrich-row textarea { min-height: 30px; }
+  .enrich-row input:focus, .enrich-row textarea:focus {
+    border-color: var(--accent);
+    outline: none;
+  }
+  .enrich-row .enrich-remove {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  .enrich-row .enrich-remove:hover {
+    color: #d33;
+    border-color: #d33;
+  }
+  .enrich-row.dup {
+    background: rgba(255, 200, 0, 0.06);
+  }
+  .enrich-row .dup-badge {
+    font-size: 10.5px;
+    color: #b07700;
+    background: rgba(255, 200, 0, 0.16);
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    display: inline-block;
+  }
+  .enrich-head {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1.4fr 1fr 0.7fr auto;
+    gap: 6px;
+    padding: 8px 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  @media (max-width: 900px) {
+    .enrich-row, .enrich-head { grid-template-columns: 1fr; }
+    .enrich-head { display: none; }
+  }
+  /* === enrich combo preview cards === */
+  .enrich-combo-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    background: var(--bg);
+  }
+  .enrich-combo-card.dup {
+    background: rgba(255, 200, 0, 0.06);
+    border-color: rgba(255, 200, 0, 0.3);
+  }
+  .enrich-combo-card-head {
+    display: grid;
+    grid-template-columns: 0.7fr 1.2fr 0.7fr auto;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .enrich-combo-card-head input {
+    border: 1px solid var(--border);
+    background: var(--bg-2);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+  .enrich-combo-card-head input:focus { border-color: var(--accent); outline: none; }
+  .enrich-combo-card-head input[data-cf="id"] { font-family: monospace; }
+  .enrich-combo-q {
+    display: grid;
+    grid-template-columns: 0.4fr 2fr auto;
+    gap: 6px;
+    margin-top: 6px;
+    align-items: start;
+  }
+  .enrich-combo-q input, .enrich-combo-q textarea {
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 12.5px;
+    font-family: inherit;
+    line-height: 1.5;
+    width: 100%;
+  }
+  .enrich-combo-q textarea { min-height: 56px; resize: vertical; }
+  .enrich-combo-q input:focus, .enrich-combo-q textarea:focus {
+    border-color: var(--accent); outline: none;
+  }
+  .enrich-combo-q-num {
+    font-size: 11px;
+    color: var(--muted);
+    align-self: center;
+    padding-top: 6px;
+  }
+  .enrich-combo-card .dup-badge {
+    font-size: 10.5px;
+    color: #b07700;
+    background: rgba(255, 200, 0, 0.16);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+  .enrich-combo-remove {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    align-self: start;
+  }
+  .enrich-combo-remove:hover { color: #d33; border-color: #d33; }
   .admin-fetch-row {
     display: flex;
     gap: 8px;
@@ -1151,16 +1293,43 @@
     color: var(--text-2);
     margin-bottom: 8px;
   }
-  .focus-tip-expand {
-    background: transparent;
-    border: none;
-    color: var(--tip-color);
-    font-size: 12px;
-    font-weight: 600;
-    padding: 0;
-    cursor: pointer;
+  .focus-tip-detail {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.7;
   }
-  .focus-tip-expand:hover { text-decoration: underline; }
+  .focus-tip-detail em { color: var(--text-2); font-style: italic; }
+  .focus-tip-detail strong { color: var(--text); font-weight: 600; }
+  .focus-tip-detail code {
+    background: var(--bg-2);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+  .focus-tip-detail .tips-example {
+    margin: 8px 0;
+    padding: 8px 10px;
+    background: var(--bg-2);
+    border-left: 3px solid var(--tip-color);
+    border-radius: 4px;
+    font-size: 12.5px;
+  }
+  .focus-tip-detail .tips-example-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--tip-color);
+    margin-bottom: 4px;
+  }
+  .focus-tip-detail .tips-good { color: var(--text); }
+  .focus-tip-detail .tips-bad {
+    display: block;
+    color: var(--text-2);
+    text-decoration: line-through;
+    opacity: 0.75;
+  }
 
   /* ===== Combos Modal (OPIc catalog browser) ===== */
   .combo-stats-bar {
@@ -1241,6 +1410,47 @@
     border-bottom: 1px solid var(--border);
     border-radius: 0;
     transition: background 0.15s, border-left-color 0.15s;
+  }
+  /* === Combo category groups (admin combo catalog) === */
+  .combo-cat-group {
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .combo-cat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+  }
+  .combo-cat-name {
+    font-weight: 700;
+    color: var(--text);
+  }
+  .combo-cat-count {
+    font-size: 11.5px;
+    color: var(--muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 1px 8px;
+  }
+  .combo-cat-pick {
+    margin-left: auto;
+    font-size: 11.5px;
+    color: var(--opic);
+    background: var(--opic-soft);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-weight: 600;
+  }
+  .combo-cat-group .combo-row:last-of-type {
+    border-bottom: none;
   }
   .combo-row:last-child { border-bottom: none; }
   .combo-row:hover { background: rgba(255, 255, 255, 0.02); }
@@ -3145,7 +3355,7 @@
         </div>
         <div class="focus-tip-title" id="diary-focus-title"></div>
         <div class="focus-tip-sub" id="diary-focus-sub"></div>
-        <button class="focus-tip-expand" id="diary-focus-expand">📖 자세히 보기 →</button>
+        <div class="focus-tip-detail" id="diary-focus-detail"></div>
       </div>
 
       <textarea class="entry-input" id="diary-input"
@@ -3197,16 +3407,9 @@
           </div>
           <div class="focus-tip-title" id="opic-focus-title"></div>
           <div class="focus-tip-sub" id="opic-focus-sub"></div>
-          <button class="focus-tip-expand" id="opic-focus-expand">📖 자세히 보기 →</button>
+          <div class="focus-tip-detail" id="opic-focus-detail"></div>
         </div>
 
-        <div class="intro-help">
-          오늘의 Combo는 3개 질문이 자동으로 이어집니다.<br>
-          • 문제가 자동 재생되고 끝나면 <strong>녹음이 자동 시작</strong>돼요<br>
-          • 답변 후 종료 → 받아쓴 내용 확인 → "다음 문제"<br>
-          • 3개 다 끝나면 한 번에 첨삭 받기<br>
-          • 문제당 <strong>다시 듣기 1회</strong> 가능
-        </div>
         <div class="combo-questions-preview" id="combo-questions-preview"></div>
         <button class="cta-submit opic" id="combo-start-btn">▶ Combo 시작하기</button>
       </div>
@@ -3217,7 +3420,8 @@
           <div class="cq-label" id="cq-label"></div>
           <div class="cq-text" id="cq-text"></div>
           <div class="cq-controls">
-            <button class="tts-btn" id="replay-btn">🔊 다시 듣기 (1회)</button>
+            <button class="tts-btn" id="play-btn">▶ 문제 재생</button>
+            <button class="tts-btn" id="replay-btn" hidden>🔊 다시 듣기 (1회)</button>
             <span class="cq-status" id="cq-status"></span>
           </div>
         </div>
@@ -3287,6 +3491,7 @@
           <button class="admin-nav-item" data-admin-section="slack">🔔 Slack 알림</button>
           <button class="admin-nav-item" data-admin-section="ai-fetch">🤖 AI 생성</button>
           <button class="admin-nav-item" data-admin-section="extract">📎 자료 추출</button>
+          <button class="admin-nav-item" data-admin-section="enrich">✨ 보강</button>
           <button class="admin-nav-item" data-admin-section="expressions">💬 표현 <span class="admin-nav-count" id="adm-count-expr">…</span></button>
           <button class="admin-nav-item" data-admin-section="quotes">📜 명언 <span class="admin-nav-count" id="adm-count-quote">…</span></button>
           <button class="admin-nav-item" data-admin-section="combos">📚 콤보 <span class="admin-nav-count" id="adm-count-combo">…</span></button>
@@ -3507,6 +3712,158 @@
             <div class="admin-card-title">✨ 방금 추가됨 (<span id="admin-extract-added-count">0</span>개)</div>
             <div class="admin-added-list" id="admin-extract-added-list"></div>
             <button class="ghost-btn" id="admin-extract-go-expressions" style="margin-top:10px;">💬 전체 표현에서 보기 →</button>
+          </div>
+        </div>
+
+        <!-- ===== Enrich (user notes → expressions / combos) ===== -->
+        <div class="admin-section-panel" data-admin-panel="enrich" hidden>
+          <h2 class="admin-section-title">✨ 보강</h2>
+
+          <div class="admin-source-tabs">
+            <button class="admin-source-tab active" data-enrich-tab="expressions">💬 표현 보강</button>
+            <button class="admin-source-tab" data-enrich-tab="combos">🎯 콤보 보강</button>
+          </div>
+
+          <!-- 💬 Expressions sub-panel -->
+          <div data-enrich-panel="expressions">
+            <div class="admin-card">
+              <div class="admin-card-sub">
+                공부하다 만난 표현, 들은 영어, 메모해둔 문구를 라이브러리에 추가.
+                한 줄에 하나씩, 또는 자유롭게.
+                <strong>그대로</strong> 넣거나 <strong>AI 보강</strong>(예문·팁·카테고리 자동 생성)으로 다듬어서 넣을 수 있어요.
+              </div>
+
+              <textarea class="entry-input" id="enrich-input" rows="10"
+                style="min-height:180px; font-size:13.5px;"
+                placeholder="예시:
+hit the ground running — 처음부터 잘 달리다
+get cold feet : 겁먹다
+break the ice
+think outside the box
+
+# 주석은 # 으로 시작 (무시됨)
+# 구분자 없으면 en만 채워두고 ko는 빈 칸으로 두니까 미리보기에서 직접 채워주세요"></textarea>
+
+              <div class="enrich-options" style="display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin:12px 0;">
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                  <input type="radio" name="enrich-mode" value="raw" checked>
+                  <span><strong>그대로</strong> — 라인별 단순 파싱</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                  <input type="radio" name="enrich-mode" value="ai">
+                  <span><strong>AI 보강</strong> — 예문·팁·카테고리 자동</span>
+                </label>
+                <div id="enrich-ai-opts" style="display:none; gap:10px; align-items:center;">
+                  <label style="font-size:12px; color:var(--text-2);">모델
+                    <select id="enrich-model" style="margin-left:4px;">
+                      <option value="haiku">Haiku · 빠름</option>
+                      <option value="sonnet" selected>Sonnet · 균형</option>
+                      <option value="opus">Opus · 최고</option>
+                    </select>
+                  </label>
+                  <label style="font-size:12px; color:var(--text-2);">최대 개수
+                    <input type="number" id="enrich-count" min="3" max="40" step="1" value="12" style="width:64px; margin-left:4px;">
+                  </label>
+                </div>
+              </div>
+
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="cta-submit" id="enrich-preview-btn">🔍 미리보기 생성</button>
+                <button class="ghost-btn" id="enrich-clear-btn">🗑 입력 비우기</button>
+              </div>
+
+              <div id="enrich-status" class="admin-card-sub" style="margin-top:10px;"></div>
+            </div>
+
+            <div class="admin-card" id="enrich-preview-wrap" hidden>
+              <div class="admin-card-title">📋 미리보기 — 필요하면 직접 편집</div>
+              <div class="admin-card-sub">
+                총 <strong id="enrich-preview-count">0</strong>개 ·
+                저장 시 source=<code>user_note</code>로 라이브러리에 합쳐지고 알림에 우선적으로 노출됨.
+              </div>
+              <div class="enrich-head">
+                <div>EN (영어)</div>
+                <div>KO (한국어 뜻)</div>
+                <div>EXAMPLE</div>
+                <div>TIP</div>
+                <div>CATEGORY</div>
+                <div></div>
+              </div>
+              <div id="enrich-preview-list"></div>
+              <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+                <button class="ghost-btn" id="enrich-preview-discard">취소</button>
+                <button class="cta-submit" id="enrich-save-btn">📚 라이브러리에 추가 →</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 🎯 Combos sub-panel -->
+          <div data-enrich-panel="combos" hidden>
+            <div class="admin-card">
+              <div class="admin-card-sub">
+                OPIc 콤보 노트(토픽 + 3개 질문 묶음)를 라이브러리에 추가.
+                <strong>AI 보강</strong>이 기본 — 한국어 질문을 자연스러운 영어 OPIc 질문으로 변환하고 type(묘사/루틴/경험/롤플/계기)도 추정해줘요.
+                <br><strong>그대로</strong>는 한국어 질문 그대로 들어가서 TTS가 영어로 안 읽을 수 있음 (테스트용).
+              </div>
+
+              <textarea class="entry-input" id="enrich-combo-input" rows="12"
+                style="min-height:220px; font-size:13.5px;"
+                placeholder="형식: 토픽 헤더 + 3개 질문, 콤보 사이는 빈 줄로 구분
+
+예시:
+호텔-서베이
+2. 호텔 묘사
+3. 호텔 루틴
+4. 호텔 경험
+
+집휴가-서베이
+5. 집에서 보내는 휴가 묘사
+6. 마지막으로 집에서 보낸 휴가
+7. 인상깊었던 휴가 경험
+
+# 토픽 헤더 생략 가능 (그러면 AI가 추정)
+# 번호(2., 5.)는 자동 제거"></textarea>
+
+              <div class="enrich-options" style="display:flex; flex-wrap:wrap; gap:14px; align-items:center; margin:12px 0;">
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                  <input type="radio" name="enrich-combo-mode" value="ai" checked>
+                  <span><strong>AI 보강</strong> — 영어 변환 + type 추정 (권장)</span>
+                </label>
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                  <input type="radio" name="enrich-combo-mode" value="raw">
+                  <span><strong>그대로</strong> — 한국어 유지</span>
+                </label>
+                <div id="enrich-combo-ai-opts" style="display:flex; gap:10px; align-items:center;">
+                  <label style="font-size:12px; color:var(--text-2);">모델
+                    <select id="enrich-combo-model" style="margin-left:4px;">
+                      <option value="haiku">Haiku · 빠름</option>
+                      <option value="sonnet" selected>Sonnet · 균형</option>
+                      <option value="opus">Opus · 최고</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="cta-submit" id="enrich-combo-preview-btn">🔍 미리보기 생성</button>
+                <button class="ghost-btn" id="enrich-combo-clear-btn">🗑 입력 비우기</button>
+              </div>
+
+              <div id="enrich-combo-status" class="admin-card-sub" style="margin-top:10px;"></div>
+            </div>
+
+            <div class="admin-card" id="enrich-combo-preview-wrap" hidden>
+              <div class="admin-card-title">📋 미리보기 — 필요하면 직접 편집</div>
+              <div class="admin-card-sub">
+                총 <strong id="enrich-combo-preview-count">0</strong>개 ·
+                저장 시 <code>data/combos_extra.json</code>에 추가되고 OPIc 콤보 카탈로그에 합쳐짐.
+              </div>
+              <div id="enrich-combo-preview-list"></div>
+              <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px;">
+                <button class="ghost-btn" id="enrich-combo-preview-discard">취소</button>
+                <button class="cta-submit" id="enrich-combo-save-btn">📚 콤보 카탈로그에 추가 →</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -3768,12 +4125,14 @@
     <div style="border-left:3px solid var(--opic); padding:14px 16px; background:var(--opic-soft); border-radius:8px; margin-bottom:18px;">
       <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">
         <div style="font-size:11px; color:var(--opic); font-weight:700; text-transform:uppercase; letter-spacing:0.06em;">
-          🎯 OPIc 토픽 선택
+          🎯 OPIc 카테고리 선택
         </div>
         <div id="opic-topic-counter" style="font-size:13px; font-weight:700; color:var(--opic);">0 / 12</div>
       </div>
       <div style="font-size:12px; color:var(--text-2); line-height:1.6; margin-bottom:10px;">
-        실제 OPIc Background Survey처럼 <strong>정확히 12개</strong> 골라요. 매일 combo와 🎲 리롤이 선택한 토픽에서만 뽑힙니다.
+        실제 OPIc Background Survey처럼 <strong>카테고리 단위로 12개</strong> 골라요.
+        같은 카테고리(예: 공원)에 콤보가 여러 개 있으면 모두 풀에 들어가서 랜덤으로 나옵니다.
+        새 콤보를 보강에서 추가해도 동일 카테고리면 자동 합류.
       </div>
       <div id="opic-topic-grid" class="opic-topic-grid"></div>
       <div id="opic-topic-msg" style="margin-top:8px; font-size:12px; color:var(--muted); min-height:18px;"></div>
@@ -4923,23 +5282,96 @@
   }
   // Active pool = OPIC_COMBOS filtered by user's selected topic IDs.
   // Empty/missing selection falls back to all topics (default behavior).
+  // 콤보 → 카테고리 키워드(한국어 한 단어). 보강·AI fetch도 이 단위로 풀 관리.
+  //   '공원 (Park)' → '공원'
+  //   '기술 / AI (Technology)' → '기술'
+  //   '날씨·계절 (Weather / Seasons)' → '날씨'
+  //   '호텔-서베이' → '호텔'
+  function deriveCategory(topic) {
+    if (!topic) return '';
+    if (typeof topic !== 'string') topic = String(topic);
+    let s = topic.split('(')[0].trim();
+    s = s.split('/')[0].trim();
+    s = s.split('-')[0].trim();
+    s = s.split('·')[0].trim();
+    s = s.split(',')[0].trim();
+    return s;
+  }
+  function comboCategory(c) {
+    return (c && c.category && c.category.trim()) || deriveCategory(c && c.topic);
+  }
+
+  // 사용자가 고른 12개 = 카테고리 키워드 set. 빈 배열이면 전체 풀.
+  // 과거 기록(콤보 ID 리스트)이 들어와도 호환: ID → 그 콤보의 카테고리로 변환.
+  function migrateSelectedTopicsToCategories(arr) {
+    if (!Array.isArray(arr)) return [];
+    const out = new Set();
+    for (const v of arr) {
+      if (typeof v !== 'string' || !v.trim()) continue;
+      const byId = OPIC_COMBOS.find(c => c.id === v);
+      if (byId) out.add(comboCategory(byId));
+      else out.add(v.trim());  // 이미 카테고리 키워드라고 가정
+    }
+    return Array.from(out);
+  }
+
+  // 마스터 카테고리 풀 — 모든 콤보(빌트인+extras)에서 unique. picker가 이 set을 보여줌.
+  function getAllCategoriesSorted() {
+    const m = new Map();  // cat → count
+    for (const c of OPIC_COMBOS) {
+      const cat = comboCategory(c);
+      if (!cat) continue;
+      m.set(cat, (m.get(cat) || 0) + 1);
+    }
+    return Array.from(m.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([cat, n]) => ({ cat, count: n }));
+  }
+
   function getActiveOpicCombos() {
     const sel = state.opicSelectedTopics;
     if (!Array.isArray(sel) || sel.length === 0) return OPIC_COMBOS;
     const selSet = new Set(sel);
-    const filtered = OPIC_COMBOS.filter(c => selSet.has(c.id));
+    const filtered = OPIC_COMBOS.filter(c => selSet.has(comboCategory(c)));
     return filtered.length > 0 ? filtered : OPIC_COMBOS;
   }
-  function getDailyOpicCombo() {
+  // 카테고리 단위 균등 분포 픽 (2단계):
+  //   1) 사용자 고른 카테고리 중 하나를 픽
+  //   2) 그 카테고리에 속한 콤보 중 하나를 픽
+  // 결과적으로 카테고리 수가 같다면 각 카테고리가 균등하게 나옴 (특정 카테고리에
+  // 콤보가 많아도 그 카테고리 확률이 늘지 않음).
+  function _comboPoolByCategory() {
     const pool = getActiveOpicCombos();
+    const byCat = new Map();  // category → combo[]
+    for (const c of pool) {
+      const cat = comboCategory(c) || '(미분류)';
+      if (!byCat.has(cat)) byCat.set(cat, []);
+      byCat.get(cat).push(c);
+    }
+    // Map 순회 순서 보장 위해 Array로
+    return Array.from(byCat.entries());  // [[cat, combos], ...]
+  }
+
+  function getDailyOpicCombo() {
     const today = todayKey();
+    const cats = _comboPoolByCategory();
+    if (cats.length === 0) {
+      // 안전망: 풀이 비면 빌트인 첫 콤보
+      return OPIC_COMBOS[0];
+    }
     if (state.dailyOpicComboDate === today && state.dailyOpicComboId) {
-      const found = pool.find(c => c.id === state.dailyOpicComboId);
-      if (found) return found;
-      // Cached daily combo no longer in user's selected pool → pick a fresh one
+      // 캐시된 콤보가 현재 풀에 있으면 그대로 사용
+      for (const [, combos] of cats) {
+        const found = combos.find(c => c.id === state.dailyOpicComboId);
+        if (found) return found;
+      }
+      // 캐시된 콤보가 더 이상 풀에 없으면 새로 픽
     }
     const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-    const combo = pool[dayOfYear % pool.length];
+    // 1단계: 카테고리 결정론적 픽 (매일 다른 카테고리 순회)
+    const [, combos] = cats[dayOfYear % cats.length];
+    // 2단계: 그 카테고리 안에서 콤보 결정론적 픽 (콤보 여러 개면 day-of-year 기반 round-robin)
+    const combo = combos[dayOfYear % combos.length];
     state.dailyOpicComboId = combo.id;
     state.dailyOpicComboDate = today;
     state.dailyOpicQuestionIndex = 0;
@@ -4947,13 +5379,17 @@
     return combo;
   }
   function rerollOpicCombo() {
-    const pool = getActiveOpicCombos();
+    const cats = _comboPoolByCategory();
+    if (cats.length === 0) return OPIC_COMBOS[0];
     const cur = state.dailyOpicComboId;
-    let next = pool[Math.floor(Math.random() * pool.length)];
-    let attempts = 0;
-    while (pool.length > 1 && next.id === cur && attempts < 10) {
-      next = pool[Math.floor(Math.random() * pool.length)];
-      attempts++;
+    let next = null;
+    for (let attempt = 0; attempt < 10; attempt++) {
+      // 1단계: 카테고리 랜덤
+      const [, combos] = cats[Math.floor(Math.random() * cats.length)];
+      // 2단계: 그 카테고리 안에서 콤보 랜덤
+      const cand = combos[Math.floor(Math.random() * combos.length)];
+      if (!cur || cand.id !== cur) { next = cand; break; }
+      next = cand;
     }
     state.dailyOpicComboId = next.id;
     state.dailyOpicComboDate = todayKey();
@@ -5356,12 +5792,19 @@
   }
 
   // ============ OPIC ============
-  let recognition = null;
+  // 녹음 흐름:
+  //   1. getUserMedia로 마이크 stream 획득
+  //   2. MediaRecorder가 webm/opus(Safari는 mp4) 한 덩어리로 녹음
+  //   3. 정지 누르면 Blob을 /api/transcribe/로 POST → 서버 faster-whisper로 한 번에 변환
+  //   4. 받은 텍스트를 transcript-edit에 채움
+  // 실시간 dictation 안 함 — 환경별 정확도 편차 줄이려는 의도적 선택.
+  let mediaRecorder = null;
+  let mediaStream = null;
+  let recordedChunks = [];
   let isRecording = false;
+  let isTranscribing = false;
   let recordingStart = null;
   let recordingTimer = null;
-  let interimText = '';
-  let finalText = '';
 
   function resetOpicView() {
     // Reset to recording state
@@ -5376,11 +5819,21 @@
     document.getElementById('record-hint').textContent = '버튼을 누르고 영어로 답변해보세요';
     const btn = document.getElementById('record-btn');
     btn.classList.remove('recording');
+    btn.disabled = false;
     btn.textContent = '🎤';
     isRecording = false;
-    finalText = '';
-    interimText = '';
+    isTranscribing = false;
+    recordedChunks = [];
+    releaseMediaStream();
     hideError('opic-error');
+  }
+
+  function releaseMediaStream() {
+    if (mediaStream) {
+      try { mediaStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+      mediaStream = null;
+    }
+    mediaRecorder = null;
   }
 
   // Detect environment: Cowork artifact (mic blocked) vs localhost (mic works)
@@ -5407,6 +5860,7 @@
       date: today,
       comboId: combo.id,
       transcripts: [null, null, null],
+      audioIds: [null, null, null],   // STT 시 발급된 임시 audio_id (entry 저장 시 연결)
       currentIndex: 0,
       replaysUsed: [0, 0, 0],
       started: false,
@@ -5517,7 +5971,7 @@
     presentCurrentQuestion(false);
   }
 
-  function presentCurrentQuestion(resume) {
+  function presentCurrentQuestion(resume, autoPlay) {
     const combo = getDailyOpicCombo();
     const sess = state.opicSession;
     const idx = sess.currentIndex;
@@ -5526,7 +5980,13 @@
     document.getElementById('cq-label').textContent = `Q${idx+1} · ${q.type}`;
     document.getElementById('cq-text').textContent = q.text;
 
+    // ▶ 재생 / 🔊 다시 듣기 버튼 — 처음에는 ▶ 재생만 노출. 한 번 누르면 다시 듣기로 전환.
+    const playBtn = document.getElementById('play-btn');
     const replayBtn = document.getElementById('replay-btn');
+    playBtn.hidden = false;
+    playBtn.disabled = false;
+    playBtn.textContent = '▶ 문제 재생';
+    replayBtn.hidden = true;
     if (sess.replaysUsed[idx] >= 1) {
       replayBtn.disabled = true;
       replayBtn.textContent = '🔊 다시 듣기 (사용함)';
@@ -5545,8 +6005,8 @@
     document.getElementById('live-transcript').hidden = true;
     document.getElementById('live-transcript').textContent = '';
     document.getElementById('transcript-edit').value = '';
-    document.getElementById('record-label').textContent = '녹음 준비 중...';
-    document.getElementById('record-hint').textContent = '문제 재생이 끝나면 자동으로 녹음이 시작돼요';
+    document.getElementById('record-label').textContent = '재생 대기 중';
+    document.getElementById('record-hint').textContent = '▶ 재생 버튼을 누르면 문제가 들리고, 끝나면 자동 녹음 시작돼요';
     const rb = document.getElementById('record-btn');
     rb.classList.remove('recording');
     rb.textContent = '🎤';
@@ -5569,10 +6029,23 @@
       document.getElementById('transcript-edit').value = sess.transcripts[idx];
       document.getElementById('cq-status').textContent = '저장된 답변 있음';
       document.getElementById('cq-status').className = 'cq-status done';
+      playBtn.hidden = true;  // 이미 답한 문제 — 재생 버튼 불필요
       return;
     }
+    // 다음 문제로 이동(Q2/Q3)이면 자동 재생. 처음 시작(Q1)은 사용자가 ▶ 클릭.
+    if (autoPlay) {
+      setTimeout(() => playCurrentQuestion(), 300);
+    }
+  }
 
-    // Auto play TTS, then auto-start recording when done
+  function playCurrentQuestion() {
+    // 첫 재생 (사용자가 ▶ 누름) — 다시 듣기 카운트와 무관.
+    const combo = getDailyOpicCombo();
+    const sess = state.opicSession;
+    if (!sess) return;
+    const q = combo.questions[sess.currentIndex];
+    document.getElementById('play-btn').hidden = true;
+    document.getElementById('replay-btn').hidden = false;
     speakAndAutoRecord(q.text);
   }
 
@@ -5612,12 +6085,11 @@
     speakAndAutoRecord(combo.questions[idx].text);
   }
 
-  function onComboRecordingStopped() {
-    const text = (finalText + interimText).trim();
+  function onComboRecordingStopped(text) {
     document.getElementById('record-area').hidden = true;
     document.getElementById('transcript-section').hidden = false;
-    document.getElementById('transcript-edit').value = text;
-    document.getElementById('cq-status').textContent = '✅ 녹음 완료 — 확인 후 다음으로';
+    document.getElementById('transcript-edit').value = text || '';
+    document.getElementById('cq-status').textContent = '✅ 변환 완료 — 확인 후 다음으로';
     document.getElementById('cq-status').className = 'cq-status done';
   }
 
@@ -5642,7 +6114,8 @@
     } else {
       sess.currentIndex++;
       saveData(state);
-      presentCurrentQuestion(false);
+      // Q2/Q3 — 다음 문제로 이동 시 자동 재생
+      presentCurrentQuestion(false, true);
     }
   }
 
@@ -5653,10 +6126,13 @@
 
     showLoading('🎤', '3개 답변 한 번에 첨삭 중 (시간 좀 걸려요)');
 
+    const audioIds = Array.isArray(sess.audioIds) ? sess.audioIds : [null, null, null];
+
     let failed = 0;
     for (let i = 0; i < 3; i++) {
       const text = sess.transcripts[i];
       const q = combo.questions[i];
+      const aid = audioIds[i] || null;
       try {
         const fb = await getFeedback(text, { mode: 'opic', opicQuestion: q.text });
         await addEntry(key, {
@@ -5668,13 +6144,13 @@
           opicQuestionIndex: i,
           opicQuestionType: q.type,
           feedback: fb,
+          audioId: aid,
           completedAt: new Date().toISOString(),
           model: state.preferredModel || 'haiku',
         });
       } catch (e) {
         failed++;
         console.error(`Q${i+1} 첨삭 실패:`, e);
-        // Save with raw fallback if available
         if (lastRawResponse && lastRawResponse.trim().length > 20) {
           await addEntry(key, {
             id: Date.now() + i,
@@ -5686,6 +6162,7 @@
             opicQuestionType: q.type,
             feedback: null,
             rawFeedback: lastRawResponse,
+            audioId: aid,
             completedAt: new Date().toISOString(),
             model: state.preferredModel || 'haiku',
           });
@@ -5722,103 +6199,218 @@
     speechSynthesis.speak(utter);
   }
 
-  // ============ STT ============
-  function initSpeechRecognition() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return null;
-    const rec = new SR();
-    rec.lang = 'en-US';
-    rec.continuous = true;
-    rec.interimResults = true;
-    return rec;
+  // ============ STT (MediaRecorder → 서버 faster-whisper) ============
+  // 실시간 dictation 안 함. 녹음 끝나면 한 파일 통째로 서버에 올려서 변환.
+
+  function _pickRecorderMime() {
+    // 브라우저별 지원 mime을 우선순위대로. MediaRecorder.isTypeSupported 없는 환경은 ''로.
+    const candidates = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4;codecs=mp4a.40.2',
+      'audio/mp4',
+      'audio/ogg;codecs=opus',
+      'audio/ogg',
+    ];
+    if (typeof MediaRecorder === 'undefined') return '';
+    if (!MediaRecorder.isTypeSupported) return '';
+    for (const m of candidates) {
+      try { if (MediaRecorder.isTypeSupported(m)) return m; } catch (e) {}
+    }
+    return '';
   }
 
-  function startRecording() {
-    if (!recognition) recognition = initSpeechRecognition();
-    if (!recognition) {
-      showSttWarning('이 브라우저는 음성 인식(STT)을 지원하지 않아요. Chrome/Edge에서 실행하거나, 아래 텍스트 입력 박스를 직접 사용해주세요.');
+  function _extFromMime(mime) {
+    if (!mime) return 'webm';
+    if (mime.includes('mp4')) return 'mp4';
+    if (mime.includes('ogg')) return 'ogg';
+    if (mime.includes('webm')) return 'webm';
+    return 'webm';
+  }
+
+  async function startRecording() {
+    if (isTranscribing) return;
+    if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showSttWarning('이 브라우저는 MediaRecorder를 지원하지 않아요. Chrome/Edge/Safari 최신 버전으로 실행하거나, 아래 박스에 직접 답변을 적어주세요.');
       showManualTranscriptFallback();
       return;
     }
 
-    finalText = '';
-    interimText = '';
-    isRecording = true;
-    recordingStart = Date.now();
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+    } catch (e) {
+      console.error('getUserMedia failed', e);
+      const msg = (e && e.name === 'NotAllowedError')
+        ? '🎙 마이크 권한이 거부됐어요. 브라우저 주소창 옆 권한 아이콘에서 허용으로 바꿔주세요. 그게 안 되면 아래 박스에 직접 답변을 적어주세요.'
+        : `마이크 접근 실패 (${e && e.name || 'unknown'}). 직접 입력으로 진행하세요.`;
+      showSttWarning(msg);
+      showManualTranscriptFallback();
+      releaseMediaStream();
+      return;
+    }
 
-    recognition.onresult = (event) => {
-      interimText = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) finalText += t + ' ';
-        else interimText += t;
-      }
-      document.getElementById('live-transcript').textContent = finalText + interimText;
+    recordedChunks = [];
+    const mime = _pickRecorderMime();
+    try {
+      mediaRecorder = mime ? new MediaRecorder(mediaStream, { mimeType: mime }) : new MediaRecorder(mediaStream);
+    } catch (e) {
+      console.error('MediaRecorder ctor failed', e);
+      showSttWarning(`녹음 시작 실패: ${e.message}. 직접 입력으로 진행하세요.`);
+      showManualTranscriptFallback();
+      releaseMediaStream();
+      return;
+    }
+
+    mediaRecorder.ondataavailable = (ev) => {
+      if (ev.data && ev.data.size > 0) recordedChunks.push(ev.data);
     };
-
-    recognition.onerror = (e) => {
-      console.error('STT error', e);
-      if (e.error === 'not-allowed' || e.error === 'permission-denied') {
-        stopRecording(true);
-        showSttWarning('🎙 마이크 권한이 없거나 차단됐어요. Cowork 아티팩트는 마이크 접근이 제한될 수 있어요. 아래 박스에 직접 답변을 적어주세요.');
-        showManualTranscriptFallback();
-      } else if (e.error === 'no-speech') {
-        // ignore, will continue
-      } else if (e.error === 'aborted') {
-        // user stopped
-      } else {
-        showSttWarning(`STT 오류 (${e.error}). 직접 입력으로 진행하세요.`);
-        showManualTranscriptFallback();
-        stopRecording(true);
-      }
+    mediaRecorder.onerror = (ev) => {
+      console.error('MediaRecorder error', ev);
+      showSttWarning('녹음 중 오류가 발생했어요. 다시 시도하거나 직접 입력해주세요.');
+      showManualTranscriptFallback();
+      isRecording = false;
+      releaseMediaStream();
     };
-
-    recognition.onend = () => {
-      if (isRecording) {
-        // Recognition stopped unexpectedly — restart for continuous mode
-        try { recognition.start(); } catch (e) {}
+    mediaRecorder.onstop = () => {
+      const wasRecording = isRecording;
+      isRecording = false;
+      const recorderMime = (mediaRecorder && mediaRecorder.mimeType) || mime || 'audio/webm';
+      releaseMediaStream();
+      // skipTranscript는 stopRecording(true) 케이스에서 _skipNext 플래그로 전달
+      if (_skipNextTranscribe) {
+        _skipNextTranscribe = false;
+        recordedChunks = [];
+        return;
       }
+      if (!wasRecording) return;
+      const blob = new Blob(recordedChunks, { type: recorderMime });
+      recordedChunks = [];
+      if (!blob.size) {
+        showSttWarning('녹음 데이터가 비어있어요. 다시 시도해주세요.');
+        showManualTranscriptFallback();
+        return;
+      }
+      _sendAudioForTranscription(blob, recorderMime);
     };
 
     try {
-      recognition.start();
-      const btn = document.getElementById('record-btn');
-      btn.classList.add('recording');
-      btn.textContent = '⏸';
-      document.getElementById('record-label').textContent = '녹음 중... (다시 누르면 종료)';
-      document.getElementById('record-hint').textContent = '편하게 말해보세요. 받아쓰는 내용은 아래에 표시돼요.';
-      document.getElementById('record-timer').hidden = false;
-      document.getElementById('live-transcript').hidden = false;
-      document.getElementById('live-transcript').textContent = '';
-      startTimer();
+      mediaRecorder.start();   // 한 덩어리. timeslice 안 줌.
     } catch (e) {
-      console.error('start failed', e);
+      console.error('mediaRecorder.start failed', e);
       showSttWarning(`녹음 시작 실패: ${e.message}. 직접 입력으로 진행하세요.`);
       showManualTranscriptFallback();
-      isRecording = false;
+      releaseMediaStream();
+      return;
     }
+
+    isRecording = true;
+    recordingStart = Date.now();
+    const btn = document.getElementById('record-btn');
+    btn.classList.add('recording');
+    btn.textContent = '⏸';
+    btn.disabled = false;
+    document.getElementById('record-label').textContent = '녹음 중... (다시 누르면 종료)';
+    document.getElementById('record-hint').textContent = '편하게 영어로 답변하세요. 끝까지 말한 다음 ⏸ 누르면 한 번에 받아씁니다.';
+    document.getElementById('record-timer').hidden = false;
+    const lt = document.getElementById('live-transcript');
+    lt.hidden = false;
+    lt.textContent = '🔴 녹음 중 — 끝나면 받아쓰기 진행할게요';
+    startTimer();
   }
 
+  // stopRecording(true) 호출 시 다음 onstop에서 transcribe 스킵.
+  let _skipNextTranscribe = false;
+
   function stopRecording(skipTranscript) {
-    isRecording = false;
-    if (recognition) {
-      try { recognition.stop(); } catch (e) {}
+    if (skipTranscript) _skipNextTranscribe = true;
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      try { mediaRecorder.stop(); } catch (e) {}
+    } else {
+      // 이미 inactive면 onstop이 안 옴 — 직접 정리
+      isRecording = false;
+      releaseMediaStream();
+      _skipNextTranscribe = false;
     }
     stopTimer();
     const btn = document.getElementById('record-btn');
     btn.classList.remove('recording');
     btn.textContent = '🎤';
-    document.getElementById('record-label').textContent = '녹음 종료됨';
     document.getElementById('record-timer').hidden = true;
-
     if (!skipTranscript) {
-      // In combo mode (current view = opic with active session), use combo handler
-      if (state.opicSession && state.opicSession.started && currentView === 'opic') {
-        onComboRecordingStopped();
+      document.getElementById('record-label').textContent = '🪄 변환 중...';
+      document.getElementById('record-hint').textContent = '서버에서 받아쓰기 진행중 (몇 초~십몇 초 소요). 잠시만요.';
+      const lt = document.getElementById('live-transcript');
+      lt.hidden = false;
+      lt.textContent = '🪄 변환 중...';
+    } else {
+      document.getElementById('record-label').textContent = '녹음 종료됨';
+    }
+  }
+
+  async function _sendAudioForTranscription(blob, mime) {
+    isTranscribing = true;
+    const btn = document.getElementById('record-btn');
+    btn.disabled = true;
+
+    const ext = _extFromMime(mime);
+    const form = new FormData();
+    form.append('audio', blob, `rec.${ext}`);
+    form.append('language', 'en');
+    // Opic 콤보 모드에서만 audio 영구 보관 (기록에서 다시 듣기 위함). 단발 모드면 폐기.
+    const keepAudio = (state.opicSession && state.opicSession.started && currentView === 'opic');
+    if (keepAudio) form.append('keep_audio', '1');
+
+    let text = '';
+    let audioId = '';
+    let errorMsg = '';
+    try {
+      const res = await authFetch('/api/transcribe/', { method: 'POST', body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        errorMsg = data.error || `STT 변환 실패 (HTTP ${res.status})`;
       } else {
-        const result = (finalText + interimText).trim();
-        showTranscriptSection(result);
+        text = (data.text || '').trim();
+        audioId = data.audio_id || '';
       }
+    } catch (e) {
+      console.error('transcribe POST failed', e);
+      errorMsg = `네트워크 오류: ${e.message}`;
+    } finally {
+      isTranscribing = false;
+      btn.disabled = false;
+    }
+
+    if (errorMsg) {
+      showSttWarning(`🎙 ${errorMsg}\n직접 입력으로 진행하세요.`);
+      // combo 모드든 단발이든 transcript-section 표시해서 직접 입력 가능하게
+      if (state.opicSession && state.opicSession.started && currentView === 'opic') {
+        onComboRecordingStopped('');
+      } else {
+        showTranscriptSection('');
+      }
+      document.getElementById('live-transcript').hidden = true;
+      document.getElementById('record-label').textContent = '녹음 종료됨';
+      return;
+    }
+
+    document.getElementById('live-transcript').hidden = true;
+    document.getElementById('record-label').textContent = '녹음 종료됨';
+
+    if (state.opicSession && state.opicSession.started && currentView === 'opic') {
+      // audio_id를 현재 질문 인덱스에 보관 — submitComboBatch에서 entry POST에 함께 전달
+      if (audioId && Array.isArray(state.opicSession.audioIds)) {
+        state.opicSession.audioIds[state.opicSession.currentIndex] = audioId;
+        saveData(state);
+      }
+      onComboRecordingStopped(text);
+    } else {
+      showTranscriptSection(text);
     }
   }
 
@@ -5854,6 +6446,7 @@
   }
 
   function toggleRecording() {
+    if (isTranscribing) return;   // 변환 중에는 무시
     if (isRecording) stopRecording();
     else startRecording();
   }
@@ -6135,6 +6728,32 @@
       qBox.appendChild(document.createElement('br'));
       qBox.appendChild(ttsBtn);
       detail.appendChild(qBox);
+    }
+
+    // 2.5 내가 한 녹음 — Opic에서 keep_audio로 저장된 파일 재생
+    if (isOpic && entry.audioFilename) {
+      const recBox = document.createElement('div');
+      recBox.className = 'opic-question-box';
+      recBox.style.marginTop = '10px';
+      const rl = document.createElement('div');
+      rl.className = 'qlabel';
+      rl.textContent = '🎙 내가 녹음한 답변';
+      recBox.appendChild(rl);
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.preload = 'metadata';
+      audio.style.width = '100%';
+      audio.style.marginTop = '8px';
+      const uid = (currentUser && currentUser.username) || '';
+      const src = `/api/entries/${entry.id}/audio/${uid ? `?u=${encodeURIComponent(uid)}` : ''}`;
+      // 인증 헤더가 필요해서 fetch로 받아 blob URL로 src 설정
+      authFetch(`/api/entries/${entry.id}/audio/`).then(r => r.ok ? r.blob() : null).then(b => {
+        if (b) audio.src = URL.createObjectURL(b);
+        else recBox.appendChild(Object.assign(document.createElement('div'),
+          { textContent: '⚠️ 파일을 불러올 수 없어요', style: 'font-size:12px;color:var(--muted);margin-top:6px;' }));
+      });
+      recBox.appendChild(audio);
+      detail.appendChild(recBox);
     }
 
     // 3. Overall comment (compact one-line)
@@ -7712,11 +8331,11 @@ Now output ONLY the JSON object:`;
   function makeFocusTip(prefix, tips, carousel) {
     const elTitle  = document.getElementById(`${prefix}-focus-title`);
     const elSub    = document.getElementById(`${prefix}-focus-sub`);
+    const elDetail = document.getElementById(`${prefix}-focus-detail`);
     const elNum    = document.getElementById(`${prefix}-focus-num`);
     const elTotal  = document.getElementById(`${prefix}-focus-total`);
     const elReroll = document.getElementById(`${prefix}-focus-reroll`);
-    const elExpand = document.getElementById(`${prefix}-focus-expand`);
-    if (!elTitle || !elSub || !elNum || !elTotal || !elReroll || !elExpand) {
+    if (!elTitle || !elSub || !elDetail || !elNum || !elTotal || !elReroll) {
       console.warn(`makeFocusTip(${prefix}): DOM elements missing — focus-tip card won't render. Try a hard refresh (Cmd+Shift+R).`);
       return;
     }
@@ -7725,6 +8344,8 @@ Now output ONLY the JSON object:`;
       const t = tips[idx];
       elTitle.textContent = t.title;
       elSub.textContent   = t.sub;
+      // body는 정적 클라이언트 데이터 (HTML 마크업 포함) — XSS 우려 없음
+      elDetail.innerHTML  = t.body || '';
       elNum.textContent   = idx + 1;
       elTotal.textContent = tips.length;
     }
@@ -7734,15 +8355,7 @@ Now output ONLY the JSON object:`;
       while (n === idx) n = Math.floor(Math.random() * tips.length);
       idx = n; render();
     }
-    function expandToModal() {
-      document.getElementById('tips-modal').classList.add('show');
-      tipsModalOpened = true;
-      document.querySelectorAll('.tips-tab').forEach(t => t.classList.toggle('active', t.dataset.tipsTab === prefix));
-      document.querySelectorAll('.tips-panel').forEach(p => p.classList.toggle('active', p.id === `tips-panel-${prefix}`));
-      carousel.goTo(idx);
-    }
     elReroll.addEventListener('click', reroll);
-    elExpand.addEventListener('click', expandToModal);
     render();
   }
 
@@ -8233,11 +8846,14 @@ Now output ONLY the JSON object:`;
       return (e.en||'').toLowerCase().includes(q) || (e.ko||'').toLowerCase().includes(q)
           || (e.category||'').toLowerCase().includes(q) || (e.tip||'').toLowerCase().includes(q);
     });
-    // Sort: NEW first, then alphabetical
+    // Sort: 이번 세션에서 추가됨(NEW) → createdAt desc → 알파벳
     filtered.sort((a, b) => {
       const aNew = recentlyAddedIds.has(a.id) ? 0 : 1;
       const bNew = recentlyAddedIds.has(b.id) ? 0 : 1;
       if (aNew !== bNew) return aNew - bNew;
+      const aT = a.createdAt || '';
+      const bT = b.createdAt || '';
+      if (aT !== bT) return bT.localeCompare(aT);  // 최근 먼저
       return (a.en || '').localeCompare(b.en || '');
     });
     const list = document.getElementById('adm-expr-list');
@@ -8255,7 +8871,12 @@ Now output ONLY the JSON object:`;
 
   function renderAdmQuotes() {
     const q = adminQuoteQuery.trim().toLowerCase();
-    const filtered = adminQuotes.filter(qt => !q || (qt.text||'').toLowerCase().includes(q) || (qt.author||'').toLowerCase().includes(q));
+    // 인덱스 역순 — quotes.json은 append 방식이라 끝쪽이 최근 추가. 최근 먼저 보이게.
+    const filtered = adminQuotes
+      .map((qt, i) => ({ qt, i }))
+      .filter(({ qt }) => !q || (qt.text||'').toLowerCase().includes(q) || (qt.author||'').toLowerCase().includes(q))
+      .sort((a, b) => b.i - a.i)
+      .map(({ qt }) => qt);
     const list = document.getElementById('adm-quote-list');
     if (filtered.length === 0) { list.innerHTML = '<div class="lib-empty">매칭되는 명언 없음</div>'; return; }
     list.innerHTML = filtered.map(qt => `
@@ -8268,24 +8889,59 @@ Now output ONLY the JSON object:`;
 
   function renderAdmCombos() {
     const q = adminComboQuery.trim().toLowerCase();
-    const filtered = OPIC_COMBOS.filter(c => !q || c.id.toLowerCase().includes(q) || c.topic.toLowerCase().includes(q));
+    // 배열 끝쪽이 extras (loadComboExtras에서 push) — 역순으로 가져와서 같은 카테고리 안에서도 최근 먼저
+    const filtered = OPIC_COMBOS
+      .map((c, i) => ({ c, i }))
+      .filter(({ c }) => !q
+          || c.id.toLowerCase().includes(q)
+          || (c.topic || '').toLowerCase().includes(q)
+          || comboCategory(c).toLowerCase().includes(q))
+      .sort((a, b) => b.i - a.i)
+      .map(({ c }) => c);
     const list = document.getElementById('adm-combo-list');
     if (filtered.length === 0) { list.innerHTML = '<div class="combo-list-empty">매칭되는 combo 없음</div>'; return; }
-    list.innerHTML = filtered.map(c => `
-      <details class="combo-row">
-        <summary>
-          <span class="combo-row-title">${escapeHtml(c.topic)}<span class="combo-row-id">${escapeHtml(c.id)}</span></span>
-          <span class="combo-row-badges"><span class="combo-row-badge">Q×${c.questions.length}</span></span>
-        </summary>
-        <div class="combo-row-body">
-          ${c.questions.map((q, i) => `
-            <div class="combo-q">
-              <div class="combo-q-head"><span class="combo-q-type">Q${i+1} · ${escapeHtml(q.type)}</span></div>
-              <div class="combo-q-text">${escapeHtml(q.text)}</div>
-            </div>
-          `).join('')}
+
+    // 카테고리별로 묶기. 그룹 내부 순서는 filtered의 정렬 유지(최근 먼저).
+    const groups = new Map();  // category → combo[]
+    for (const c of filtered) {
+      const cat = comboCategory(c) || '(미분류)';
+      if (!groups.has(cat)) groups.set(cat, []);
+      groups.get(cat).push(c);
+    }
+    // 그룹 정렬: 사용자가 고른 카테고리 우선 → 콤보 개수 많은 순 → 한국어 정렬
+    const selSet = new Set(Array.isArray(state.opicSelectedTopics) ? state.opicSelectedTopics : []);
+    const groupOrder = Array.from(groups.entries()).sort((a, b) => {
+      const aSel = selSet.has(a[0]) ? 0 : 1;
+      const bSel = selSet.has(b[0]) ? 0 : 1;
+      if (aSel !== bSel) return aSel - bSel;
+      if (b[1].length !== a[1].length) return b[1].length - a[1].length;
+      return a[0].localeCompare(b[0]);
+    });
+
+    list.innerHTML = groupOrder.map(([cat, combos]) => `
+      <div class="combo-cat-group">
+        <div class="combo-cat-header">
+          <span class="combo-cat-name">${escapeHtml(cat)}</span>
+          <span class="combo-cat-count">${combos.length}개</span>
+          ${selSet.has(cat) ? '<span class="combo-cat-pick">✓ 내 선택</span>' : ''}
         </div>
-      </details>
+        ${combos.map(c => `
+          <details class="combo-row" data-cat="${escapeHtml(cat)}">
+            <summary>
+              <span class="combo-row-title">${escapeHtml(c.topic)}<span class="combo-row-id">${escapeHtml(c.id)}</span></span>
+              <span class="combo-row-badges"><span class="combo-row-badge">Q×${c.questions.length}</span></span>
+            </summary>
+            <div class="combo-row-body">
+              ${c.questions.map((q, i) => `
+                <div class="combo-q">
+                  <div class="combo-q-head"><span class="combo-q-type">Q${i+1} · ${escapeHtml(q.type)}</span></div>
+                  <div class="combo-q-text">${escapeHtml(q.text)}</div>
+                </div>
+              `).join('')}
+            </div>
+          </details>
+        `).join('')}
+      </div>
     `).join('');
   }
 
@@ -8560,9 +9216,12 @@ Now output ONLY the JSON object:`;
       } else {
         const topicHint = document.getElementById('admin-combo-topic-hint').value.trim();
         const existing_ids = OPIC_COMBOS.map(c => c.id);
+        // 사용자가 카테고리 12개 선택했다면 그 안에서만 콤보 생성하도록 AI에 제약.
+        const allowed_categories = Array.isArray(state.opicSelectedTopics) ? state.opicSelectedTopics : [];
         url = '/api/admin/combos/fetch/';
-        body = { count, model, topic_hint: topicHint, existing_ids };
-        summaryTail = topicHint ? ` · 주제 "${topicHint}"` : '';
+        body = { count, model, topic_hint: topicHint, existing_ids, allowed_categories };
+        const catTail = allowed_categories.length ? ` · 카테고리 [${allowed_categories.join(', ')}] 안에서만` : '';
+        summaryTail = (topicHint ? ` · 주제 "${topicHint}"` : '') + catTail;
       }
       const r = await adminFetch(url, { method: 'POST', body: JSON.stringify(body) });
       const data = await r.json().catch(() => ({}));
@@ -8660,6 +9319,287 @@ Now output ONLY the JSON object:`;
     }
   }
 
+  // ============ ✨ Enrich (user notes → expressions / combos) ============
+  let enrichItems = [];      // 표현 보강 working set
+  let enrichComboItems = []; // 콤보 보강 working set
+
+  function switchEnrichSubtab(name) {
+    document.querySelectorAll('[data-enrich-tab]').forEach(t => t.classList.toggle('active', t.dataset.enrichTab === name));
+    document.querySelectorAll('[data-enrich-panel]').forEach(p => p.hidden = p.dataset.enrichPanel !== name);
+  }
+
+  function enrichToggleAiOpts() {
+    const mode = document.querySelector('input[name="enrich-mode"]:checked').value;
+    const opts = document.getElementById('enrich-ai-opts');
+    opts.style.display = (mode === 'ai') ? 'flex' : 'none';
+  }
+
+  async function enrichPreview() {
+    const text = document.getElementById('enrich-input').value.trim();
+    const status = document.getElementById('enrich-status');
+    const wrap = document.getElementById('enrich-preview-wrap');
+    if (!text) {
+      status.textContent = '⚠️ 본문이 비어있어요';
+      return;
+    }
+    const mode = document.querySelector('input[name="enrich-mode"]:checked').value;
+    const btn = document.getElementById('enrich-preview-btn');
+    btn.disabled = true; const orig = btn.textContent;
+    btn.textContent = (mode === 'ai') ? '🤖 AI 보강 중...' : '⏳ 파싱 중...';
+    status.textContent = '';
+    try {
+      const body = { text, mode };
+      if (mode === 'ai') {
+        body.model = document.getElementById('enrich-model').value;
+        body.count = parseInt(document.getElementById('enrich-count').value, 10) || 12;
+      }
+      const r = await adminFetch('/api/admin/expressions/from-notes/', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      enrichItems = (data.items || []).map(it => ({
+        en: it.en || '',
+        ko: it.ko || '',
+        example: it.example || '',
+        tip: it.tip || '',
+        category: it.category || '',
+        already_in_library: !!it.already_in_library,
+      }));
+      enrichRenderPreview();
+      wrap.hidden = enrichItems.length === 0;
+      const dupCount = enrichItems.filter(i => i.already_in_library).length;
+      status.innerHTML = enrichItems.length
+        ? `✅ <strong>${enrichItems.length}</strong>개 미리보기 생성 (${mode === 'ai' ? 'AI 보강' : '그대로'})${dupCount ? ` · 이미 있음 ${dupCount}` : ''}`
+        : '⚠️ 결과 없음 — 입력을 확인하세요';
+    } catch (e) {
+      status.innerHTML = `❌ ${escapeHtml(e.message)}`;
+    } finally {
+      btn.disabled = false; btn.textContent = orig;
+    }
+  }
+
+  function enrichRenderPreview() {
+    const list = document.getElementById('enrich-preview-list');
+    document.getElementById('enrich-preview-count').textContent = enrichItems.length;
+    list.innerHTML = '';
+    enrichItems.forEach((it, idx) => {
+      const row = document.createElement('div');
+      row.className = 'enrich-row' + (it.already_in_library ? ' dup' : '');
+      const dupBadge = it.already_in_library
+        ? '<div class="dup-badge">이미 있음 (저장 시 스킵)</div>'
+        : '';
+      row.innerHTML = `
+        <div>${dupBadge}<input data-f="en"  value="${escapeHtml(it.en)}" placeholder="EN"></div>
+        <div><input data-f="ko"  value="${escapeHtml(it.ko)}" placeholder="KO"></div>
+        <div><textarea data-f="example" placeholder="example sentence">${escapeHtml(it.example)}</textarea></div>
+        <div><textarea data-f="tip" placeholder="한국어 사용 팁">${escapeHtml(it.tip)}</textarea></div>
+        <div><input data-f="category" value="${escapeHtml(it.category)}" placeholder="카테고리"></div>
+        <div><button class="enrich-remove" data-idx="${idx}">삭제</button></div>
+      `;
+      // wire input changes back to enrichItems[idx]
+      row.querySelectorAll('[data-f]').forEach(el => {
+        el.addEventListener('input', () => { enrichItems[idx][el.dataset.f] = el.value; });
+      });
+      row.querySelector('.enrich-remove').addEventListener('click', () => {
+        enrichItems.splice(idx, 1);
+        enrichRenderPreview();
+      });
+      list.appendChild(row);
+    });
+  }
+
+  async function enrichSave() {
+    if (!enrichItems.length) return;
+    const status = document.getElementById('enrich-status');
+    const btn = document.getElementById('enrich-save-btn');
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = '💾 저장 중...';
+    try {
+      // 빈 en/ko 항목 제거
+      const items = enrichItems
+        .filter(i => i.en && i.en.trim() && i.ko && i.ko.trim())
+        .map(i => ({
+          en: i.en.trim(),
+          ko: i.ko.trim(),
+          example: (i.example || '').trim(),
+          tip: (i.tip || '').trim(),
+          category: (i.category || '').trim(),
+        }));
+      if (!items.length) throw new Error('en/ko 둘 다 채워진 항목이 없어요');
+      const r = await adminFetch('/api/admin/expressions/save-notes/', {
+        method: 'POST',
+        body: JSON.stringify({ items }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      status.innerHTML = `✅ <strong>${data.added}</strong>개 추가 · 중복 ${data.skipped_duplicate} · 무효 ${data.skipped_invalid} · 총 <strong>${data.total_now}</strong>개`;
+      // 미리보기 비우고 표현 카탈로그 새로고침
+      enrichItems = [];
+      document.getElementById('enrich-preview-wrap').hidden = true;
+      document.getElementById('enrich-input').value = '';
+      markRecentlyAdded(data.added_items || []);
+      loadAdminCatalogs();
+      libExpressions = []; libQuotes = [];
+    } catch (e) {
+      status.innerHTML = `❌ ${escapeHtml(e.message)}`;
+    } finally {
+      btn.disabled = false; btn.textContent = orig;
+    }
+  }
+
+  // ---- 🎯 콤보 보강 ----
+  function enrichComboToggleAiOpts() {
+    const mode = document.querySelector('input[name="enrich-combo-mode"]:checked').value;
+    document.getElementById('enrich-combo-ai-opts').style.display = (mode === 'ai') ? 'flex' : 'none';
+  }
+
+  async function enrichComboPreview() {
+    const text = document.getElementById('enrich-combo-input').value.trim();
+    const status = document.getElementById('enrich-combo-status');
+    const wrap = document.getElementById('enrich-combo-preview-wrap');
+    if (!text) { status.textContent = '⚠️ 본문이 비어있어요'; return; }
+    const mode = document.querySelector('input[name="enrich-combo-mode"]:checked').value;
+    const btn = document.getElementById('enrich-combo-preview-btn');
+    btn.disabled = true; const orig = btn.textContent;
+    btn.textContent = (mode === 'ai') ? '🤖 AI 보강 중...' : '⏳ 파싱 중...';
+    status.textContent = '';
+    try {
+      const body = {
+        text,
+        mode,
+        existing_ids: OPIC_COMBOS.map(c => c.id),
+        // 사용자가 12개 카테고리 골랐다면 그 안에서만 생성하도록 AI에 제약.
+        allowed_categories: Array.isArray(state.opicSelectedTopics) ? state.opicSelectedTopics : [],
+      };
+      if (mode === 'ai') {
+        body.model = document.getElementById('enrich-combo-model').value;
+      }
+      const r = await adminFetch('/api/admin/combos/from-notes/', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      enrichComboItems = (data.items || []).map(it => ({
+        id: it.id || '',
+        topic: it.topic || '',
+        category: it.category || deriveCategory(it.topic || ''),
+        questions: (it.questions || []).map(q => ({ type: q.type || '', text: q.text || '' })),
+        already_in_library: !!it.already_in_library,
+      }));
+      enrichComboRenderPreview();
+      wrap.hidden = enrichComboItems.length === 0;
+      const dupCount = enrichComboItems.filter(i => i.already_in_library).length;
+      status.innerHTML = enrichComboItems.length
+        ? `✅ <strong>${enrichComboItems.length}</strong>개 콤보 미리보기 (${mode === 'ai' ? 'AI 보강' : '그대로'})${dupCount ? ` · 이미 있음 ${dupCount}` : ''}`
+        : '⚠️ 결과 없음 — 입력 형식을 확인하세요 (콤보 사이는 빈 줄로 구분)';
+    } catch (e) {
+      status.innerHTML = `❌ ${escapeHtml(e.message)}`;
+    } finally {
+      btn.disabled = false; btn.textContent = orig;
+    }
+  }
+
+  function enrichComboRenderPreview() {
+    const list = document.getElementById('enrich-combo-preview-list');
+    document.getElementById('enrich-combo-preview-count').textContent = enrichComboItems.length;
+    // 카테고리 입력 자동완성용 datalist (사용자 선택 12개 우선, 그 다음 전체 풀)
+    let dl = document.getElementById('enrich-combo-cat-options');
+    if (!dl) {
+      dl = document.createElement('datalist');
+      dl.id = 'enrich-combo-cat-options';
+      document.body.appendChild(dl);
+    }
+    const selected = Array.isArray(state.opicSelectedTopics) ? state.opicSelectedTopics : [];
+    const all = getAllCategoriesSorted().map(x => x.cat);
+    const cats = Array.from(new Set([...selected, ...all]));
+    dl.innerHTML = cats.map(c => `<option value="${escapeHtml(c)}">`).join('');
+    list.innerHTML = '';
+    enrichComboItems.forEach((it, idx) => {
+      const card = document.createElement('div');
+      card.className = 'enrich-combo-card' + (it.already_in_library ? ' dup' : '');
+      const dupBadge = it.already_in_library
+        ? '<span class="dup-badge">이미 있음 (저장 시 스킵)</span>'
+        : '';
+      card.innerHTML = `
+        <div class="enrich-combo-card-head">
+          <input data-cf="id" value="${escapeHtml(it.id)}" placeholder="id (kebab-case)">
+          <input data-cf="topic" value="${escapeHtml(it.topic)}" placeholder="토픽명 (예: 호텔-서베이)">
+          <input data-cf="category" value="${escapeHtml(it.category)}" placeholder="카테고리 (예: 호텔)" list="enrich-combo-cat-options">
+          <div>
+            ${dupBadge}
+            <button class="enrich-combo-remove" data-idx="${idx}">콤보 삭제</button>
+          </div>
+        </div>
+        ${it.questions.map((q, qi) => `
+          <div class="enrich-combo-q">
+            <span class="enrich-combo-q-num">Q${qi+1}</span>
+            <textarea data-qi="${qi}" data-qf="text" placeholder="질문 (영어)">${escapeHtml(q.text)}</textarea>
+            <input data-qi="${qi}" data-qf="type" value="${escapeHtml(q.type)}" placeholder="type" style="width:80px;">
+          </div>
+        `).join('')}
+      `;
+      // wire
+      card.querySelectorAll('[data-cf]').forEach(el => {
+        el.addEventListener('input', () => { enrichComboItems[idx][el.dataset.cf] = el.value; });
+      });
+      card.querySelectorAll('[data-qf]').forEach(el => {
+        el.addEventListener('input', () => {
+          const qi = parseInt(el.dataset.qi, 10);
+          enrichComboItems[idx].questions[qi][el.dataset.qf] = el.value;
+        });
+      });
+      card.querySelector('.enrich-combo-remove').addEventListener('click', () => {
+        enrichComboItems.splice(idx, 1);
+        enrichComboRenderPreview();
+      });
+      list.appendChild(card);
+    });
+  }
+
+  async function enrichComboSave() {
+    if (!enrichComboItems.length) return;
+    const status = document.getElementById('enrich-combo-status');
+    const btn = document.getElementById('enrich-combo-save-btn');
+    btn.disabled = true; const orig = btn.textContent; btn.textContent = '💾 저장 중...';
+    try {
+      const items = enrichComboItems
+        .filter(i => i.id && i.id.trim() && i.questions && i.questions.length === 3
+          && i.questions.every(q => q.type && q.type.trim() && q.text && q.text.trim()))
+        .map(i => ({
+          id: i.id.trim(),
+          topic: (i.topic || '').trim(),
+          category: (i.category || '').trim() || deriveCategory(i.topic || ''),
+          questions: i.questions.map(q => ({ type: q.type.trim(), text: q.text.trim() })),
+        }));
+      if (!items.length) throw new Error('id + 3개의 (type, text) 모두 채워진 콤보가 없어요');
+      const r = await adminFetch('/api/admin/combos/save-notes/', {
+        method: 'POST',
+        body: JSON.stringify({ items, existing_ids: OPIC_COMBOS.map(c => c.id) }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      status.innerHTML = `✅ <strong>${data.added}</strong>개 추가 · 중복 ${data.skipped_duplicate} · 무효 ${data.skipped_invalid} · 총 extras ${data.total_extras}개`;
+      // 새로 추가된 콤보를 OPIC_COMBOS 메모리에도 즉시 반영 (페이지 리로드 없이)
+      const seen = new Set(OPIC_COMBOS.map(c => c.id));
+      for (const c of (data.added_items || [])) {
+        if (c && c.id && !seen.has(c.id)) { OPIC_COMBOS.push(c); seen.add(c.id); }
+      }
+      enrichComboItems = [];
+      document.getElementById('enrich-combo-preview-wrap').hidden = true;
+      document.getElementById('enrich-combo-input').value = '';
+      // 사이드바 콤보 카운트 갱신
+      document.getElementById('adm-count-combo').textContent = OPIC_COMBOS.length;
+      const adm = document.getElementById('adm-combo-total');
+      if (adm) adm.textContent = OPIC_COMBOS.length;
+    } catch (e) {
+      status.innerHTML = `❌ ${escapeHtml(e.message)}`;
+    } finally {
+      btn.disabled = false; btn.textContent = orig;
+    }
+  }
+
   document.getElementById('admin-logout-btn').addEventListener('click', exitAdminPage);
   document.getElementById('admin-create-submit').addEventListener('click', createAdminUser);
   document.getElementById('admin-new-displayname').addEventListener('keydown', e => {
@@ -8667,6 +9607,33 @@ Now output ONLY the JSON object:`;
   });
   document.getElementById('admin-fetch-submit').addEventListener('click', adminFetchSubmit);
   document.getElementById('admin-extract-submit').addEventListener('click', adminExtractExpressions);
+  // ✨ 보강 (사용자 노트 → 라이브러리)
+  document.querySelectorAll('[data-enrich-tab]').forEach(t => {
+    t.addEventListener('click', () => switchEnrichSubtab(t.dataset.enrichTab));
+  });
+  document.querySelectorAll('input[name="enrich-mode"]').forEach(r => r.addEventListener('change', enrichToggleAiOpts));
+  document.getElementById('enrich-preview-btn').addEventListener('click', enrichPreview);
+  document.getElementById('enrich-clear-btn').addEventListener('click', () => {
+    document.getElementById('enrich-input').value = '';
+    document.getElementById('enrich-status').textContent = '';
+  });
+  document.getElementById('enrich-save-btn').addEventListener('click', enrichSave);
+  document.getElementById('enrich-preview-discard').addEventListener('click', () => {
+    document.getElementById('enrich-preview-wrap').hidden = true;
+    enrichItems = [];
+  });
+  // 🎯 콤보 보강
+  document.querySelectorAll('input[name="enrich-combo-mode"]').forEach(r => r.addEventListener('change', enrichComboToggleAiOpts));
+  document.getElementById('enrich-combo-preview-btn').addEventListener('click', enrichComboPreview);
+  document.getElementById('enrich-combo-clear-btn').addEventListener('click', () => {
+    document.getElementById('enrich-combo-input').value = '';
+    document.getElementById('enrich-combo-status').textContent = '';
+  });
+  document.getElementById('enrich-combo-save-btn').addEventListener('click', enrichComboSave);
+  document.getElementById('enrich-combo-preview-discard').addEventListener('click', () => {
+    document.getElementById('enrich-combo-preview-wrap').hidden = true;
+    enrichComboItems = [];
+  });
   document.getElementById('adm-slack-save').addEventListener('click', saveAdminSlackSettings);
   document.getElementById('adm-slack-test').addEventListener('click', testAdminSlack);
   document.getElementById('adm-slack-test-as-user').addEventListener('click', testAdminSlackAsUser);
@@ -8744,6 +9711,7 @@ Now output ONLY the JSON object:`;
     navigateTo('home');
   });
   document.getElementById('combo-start-btn').addEventListener('click', startCombo);
+  document.getElementById('play-btn').addEventListener('click', playCurrentQuestion);
   document.getElementById('replay-btn').addEventListener('click', replayCurrentQuestion);
   document.getElementById('opic-reroll').addEventListener('click', () => {
     if (!confirm('Combo를 바꾸면 지금까지의 진행이 초기화돼요. 계속할까요?')) return;
@@ -8765,8 +9733,7 @@ Now output ONLY the JSON object:`;
       document.getElementById('transcript-edit').value = '';
       document.getElementById('cq-status').textContent = '';
       document.getElementById('cq-status').className = 'cq-status';
-      finalText = '';
-      interimText = '';
+      recordedChunks = [];
       setTimeout(() => startRecording(), 200);
     } else {
       resetOpicView();
@@ -8791,15 +9758,18 @@ Now output ONLY the JSON object:`;
   let pickerSelected = new Set();  // current selection inside the modal
 
   function renderOpicTopicPicker() {
+    // 콤보 ID 단위가 아니라 카테고리(공원/음악/집/...) 단위로 12개 선택.
+    // 새 콤보가 보강이나 AI로 추가돼도 같은 카테고리면 자동으로 풀에 합류됨.
     const grid = document.getElementById('opic-topic-grid');
     grid.innerHTML = '';
-    for (const c of OPIC_COMBOS) {
+    const cats = getAllCategoriesSorted();
+    for (const { cat, count } of cats) {
       const chip = document.createElement('label');
-      chip.className = 'opic-topic-chip' + (pickerSelected.has(c.id) ? ' selected' : '');
+      chip.className = 'opic-topic-chip' + (pickerSelected.has(cat) ? ' selected' : '');
       const cb = document.createElement('input');
       cb.type = 'checkbox';
-      cb.value = c.id;
-      cb.checked = pickerSelected.has(c.id);
+      cb.value = cat;
+      cb.checked = pickerSelected.has(cat);
       cb.addEventListener('change', () => {
         if (cb.checked) {
           if (pickerSelected.size >= OPIC_TOPIC_LIMIT) {
@@ -8807,15 +9777,15 @@ Now output ONLY the JSON object:`;
             flashTopicMsg(`최대 ${OPIC_TOPIC_LIMIT}개까지만 선택 가능해요`, true);
             return;
           }
-          pickerSelected.add(c.id);
+          pickerSelected.add(cat);
         } else {
-          pickerSelected.delete(c.id);
+          pickerSelected.delete(cat);
         }
         chip.classList.toggle('selected', cb.checked);
         updateTopicCounter();
       });
       const txt = document.createElement('span');
-      txt.textContent = c.topic;
+      txt.textContent = count > 1 ? `${cat} (${count})` : cat;
       chip.appendChild(cb);
       chip.appendChild(txt);
       grid.appendChild(chip);
@@ -8833,7 +9803,7 @@ Now output ONLY the JSON object:`;
       msg.textContent = '✓ 12개 완료';
       msg.style.color = 'var(--success)';
     } else if (n === 0) {
-      msg.textContent = `아무것도 선택 안 하면 전체 ${OPIC_COMBOS.length}개 토픽이 모두 사용됩니다`;
+      msg.textContent = `아무것도 선택 안 하면 전체 카테고리가 모두 사용됩니다`;
       msg.style.color = 'var(--muted)';
     } else {
       msg.textContent = `${OPIC_TOPIC_LIMIT - n}개 더 골라야 저장 가능 (또는 0개 = 전체 사용)`;
@@ -8974,8 +9944,9 @@ Now output ONLY the JSON object:`;
   async function openSettingsModal() {
     document.getElementById('settings-modal').classList.add('show');
     document.getElementById('settings-result').hidden = true;
-    // Seed picker from in-memory state immediately so it renders before fetch completes
-    pickerSelected = new Set(Array.isArray(state.opicSelectedTopics) ? state.opicSelectedTopics : []);
+    // Seed picker from in-memory state immediately so it renders before fetch completes.
+    // 마이그레이션: 기존 콤보 ID 형식이 들어와 있으면 카테고리로 변환.
+    pickerSelected = new Set(migrateSelectedTopicsToCategories(state.opicSelectedTopics));
     renderOpicTopicPicker();
     bindScheduleInputsLive();
     try {
@@ -8983,7 +9954,7 @@ Now output ONLY the JSON object:`;
       const s = await r.json();
       // DB is source of truth — re-sync picker if server differs
       const serverSel = Array.isArray(s.opic_selected_topics) ? s.opic_selected_topics : [];
-      pickerSelected = new Set(serverSel);
+      pickerSelected = new Set(migrateSelectedTopicsToCategories(serverSel));
       renderOpicTopicPicker();
 
       document.getElementById('set-site-url').value = s.site_url || 'http://localhost:8000';
@@ -9063,10 +10034,13 @@ Now output ONLY the JSON object:`;
       // Sync to in-memory + localStorage so daily combo / reroll picks up immediately
       state.opicSelectedTopics = Array.isArray(data.opic_selected_topics) ? data.opic_selected_topics : topics;
       saveData(state);
-      // If the user's current daily combo is no longer in the selected pool, re-render Opic view
+      // If the user's current daily combo is no longer in the selected pool, re-render Opic view.
+      // 선택은 카테고리 기준이므로 현재 콤보의 카테고리가 set에 있는지 검사.
       if (currentView === 'opic' && state.dailyOpicComboId) {
+        const selSet = new Set(state.opicSelectedTopics);
+        const cur = OPIC_COMBOS.find(c => c.id === state.dailyOpicComboId);
         const stillIn = state.opicSelectedTopics.length === 0
-          || state.opicSelectedTopics.includes(state.dailyOpicComboId);
+          || (cur && selSet.has(comboCategory(cur)));
         if (!stillIn) {
           resetOpicSession();
           renderOpic();
@@ -9172,7 +10146,7 @@ Now output ONLY the JSON object:`;
       if (r2.ok) {
         const s = await r2.json();
         const serverSel = Array.isArray(s.opic_selected_topics) ? s.opic_selected_topics : [];
-        state.opicSelectedTopics = serverSel;
+        state.opicSelectedTopics = migrateSelectedTopicsToCategories(serverSel);
         saveData(state);
       }
     } catch (e) {

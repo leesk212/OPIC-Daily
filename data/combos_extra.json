@@ -1,0 +1,168 @@
+[
+  {
+    "id": "cinema",
+    "topic": "영화관-서베이",
+    "questions": [
+      {
+        "type": "묘사",
+        "text": "I'd like to know about movie theaters in your area. Could you describe what a typical movie theater looks like — the layout, the seating, and the overall atmosphere?"
+      },
+      {
+        "type": "루틴",
+        "text": "What do you usually do when you go to watch a movie? Walk me through everything you typically do from the moment you arrive at the theater until the movie ends."
+      },
+      {
+        "type": "경험",
+        "text": "Could you describe the last movie theater you visited in detail? What was it like, and was there anything particularly memorable or different about that visit?"
+      }
+    ]
+  },
+  {
+    "id": "mobile-devices",
+    "topic": "기기·디바이스-서베이",
+    "questions": [
+      {
+        "type": "묘사",
+        "text": "What kinds of devices do people around you commonly use these days? Tell me about the devices you rely on most, including your phone and any other gadgets you use regularly."
+      },
+      {
+        "type": "비교",
+        "text": "How have personal devices changed compared to a few years ago? Compare the devices people used in the past with what they use now, and describe the biggest technological shifts you've noticed."
+      },
+      {
+        "type": "경험",
+        "text": "Have you ever had a serious problem with one of your devices or gadgets? Tell me what happened, how it affected your daily life, and how you resolved the situation."
+      }
+    ]
+  },
+  {
+    "id": "foreign-trip",
+    "topic": "해외여행-서베이",
+    "questions": [
+      {
+        "type": "묘사",
+        "text": "Tell me about a destination abroad that you have visited or would love to visit. Describe the place — what it looks like, what it's known for, and what draws people there."
+      },
+      {
+        "type": "계기",
+        "text": "Where did you go on your very first overseas trip, and what made it such a memorable experience? Tell me about a specific moment from that trip that still stands out to you."
+      },
+      {
+        "type": "경험",
+        "text": "Have you ever run into an unexpected problem or difficult situation while traveling abroad? Describe what happened, how it affected your trip, and what you did to handle it."
+      }
+    ]
+  },
+  {
+    "id": "clothing-store",
+    "topic": "옷가게-서베이",
+    "questions": [
+      {
+        "type": "롤플",
+        "text": "I'd like you to imagine you're at a clothing store looking for something to buy. Ask the store staff three or four questions about the clothes or items available."
+      },
+      {
+        "type": "롤플",
+        "text": "You bought an expensive item of clothing two days ago, but it has a problem. Call the store, explain the situation clearly, and suggest two or three alternatives to resolve the issue."
+      },
+      {
+        "type": "경험",
+        "text": "Have you ever had a problem with a piece of clothing or something else you purchased? Tell me what the issue was, how you felt about it, and how you ended up handling it."
+      }
+    ]
+  },
+  {
+    "id": "fitness-gym",
+    "topic": "헬스장-서베이",
+    "questions": [
+      {
+        "type": "묘사",
+        "text": "Could you describe a gym you regularly go to? What does it look like, what facilities and equipment does it have, and what do you like most about working out there?"
+      },
+      {
+        "type": "비교",
+        "text": "You mentioned you go to two different gyms. Compare them — how do they differ in terms of equipment, atmosphere, membership cost, or the kinds of people who work out there?"
+      },
+      {
+        "type": "경험",
+        "text": "Have you heard about any problems or issues that people commonly experience at gyms these days? Tell me what you've heard and whether you've personally encountered anything similar."
+      }
+    ]
+  },
+  {
+    "id": "free-time-survey",
+    "topic": "자유시간-서베이",
+    "category": "자유시간",
+    "questions": [
+      {
+        "type": "묘사",
+        "text": "Where do people in your country usually go to spend their free time? Could you describe some popular spots, like parks or beaches, and what people typically do there?"
+      },
+      {
+        "type": "변화",
+        "text": "What are some popular activities people in your country have been enjoying during their free time recently? Have these trends shifted much compared to a few years ago?"
+      },
+      {
+        "type": "비교",
+        "text": "Do you feel you have more or less free time now compared to the past? Please compare your current lifestyle with how things used to be in terms of the amount of leisure time you have."
+      }
+    ]
+  },
+  {
+    "id": "house-description",
+    "topic": "집-서베이",
+    "category": "집",
+    "questions": [
+      {
+        "type": "묘사",
+        "text": "Could you describe what your home looks like? Tell me about the overall layout, and then describe your favorite room in detail — what does it look like and why do you love it?"
+      },
+      {
+        "type": "비교",
+        "text": "Could you describe the neighborhood where you used to live? How does it compare to the area you currently live in — what are the main differences between the two?"
+      },
+      {
+        "type": "경험",
+        "text": "Has anything funny or surprising ever happened at home while you were spending time with your family? Please tell me about that experience in detail."
+      }
+    ]
+  },
+  {
+    "id": "korean-holiday",
+    "topic": "한국명절-서베이",
+    "category": "휴일",
+    "questions": [
+      {
+        "type": "묘사",
+        "text": "What is the most well-known holiday in Korea? Could you describe how people typically celebrate it, what traditions are involved, and why it holds such cultural significance?"
+      },
+      {
+        "type": "경험",
+        "text": "Could you tell me about a special or memorable experience you had during a holiday celebration with your family? What made that particular occasion stand out from the rest?"
+      },
+      {
+        "type": "경험",
+        "text": "Tell me about the most recent holiday you spent. Who were you with, what did you do, and what was the overall experience like for you?"
+      }
+    ]
+  },
+  {
+    "id": "domestic-travel-roleplay",
+    "topic": "국내여행-롤플",
+    "category": "국내 여행",
+    "questions": [
+      {
+        "type": "롤플",
+        "text": "You are planning a domestic trip and decide to call a travel agency for information. Ask the agent 3 to 4 questions about available destinations, itineraries, pricing, or anything else you need to know."
+      },
+      {
+        "type": "롤플",
+        "text": "You bought a non-refundable plane ticket, but something unexpected came up a week later and you need to change your plans. Call the airline, explain the situation clearly, and propose 3 to 4 possible alternative arrangements."
+      },
+      {
+        "type": "경험",
+        "text": "Has something ever gone wrong or caught you completely off guard while you were on vacation? Describe what happened and explain how you handled or resolved the situation."
+      }
+    ]
+  }
+]

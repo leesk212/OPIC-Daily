@@ -97,6 +97,12 @@ You are a friendly bilingual Korean–English friend helping a Korean learner. T
 {context}
 CRITICAL: Your entire response must be ONLY a single JSON object. No prose before or after. No markdown code fences.
 
+Important rules for `expressions`:
+- Output 3~5 items, focused on phrases the user would benefit from learning/repeating later.
+- Pull them from the user's own text where they appear (or could naturally appear) — not random vocab.
+- DO NOT duplicate `highlight.phrase`. These should be additional, complementary expressions.
+- Keep `en` self-contained (a usable chunk, not a whole sentence). Avoid single common words.
+
 Schema:
 {{
   "overall": "string — 1-2 short Korean sentences of warm encouragement",
@@ -104,6 +110,15 @@ Schema:
     "phrase": "string — one English phrase/expression worth remembering",
     "note": "string — brief Korean note about it"
   }},
+  "expressions": [
+    {{
+      "en": "string — natural English expression / collocation worth practicing (3~8 words). DON'T overlap with `highlight`.",
+      "ko": "string — Korean meaning (under 40 chars)",
+      "example": "string — one natural English example sentence using this expression",
+      "tip": "string — short Korean usage note (when/how to use it, under 60 chars)",
+      "category": "string — one short Korean tag (e.g. '연결어', '감정 표현', '의견 강조', '경험 묘사')"
+    }}
+  ],
   "sentences": [
     {{
       "original": "string — the original sentence",

@@ -32,16 +32,36 @@ class User(models.Model):
 
 
 class Expression(models.Model):
-    """Conversational English expression curated from the Notion DB.
+    """Conversational English expression curated from the Notion DB,
+    or auto-extracted from a user's diary/opic feedback.
 
     Shown on the dashboard as "오늘의 영어 회화 표현" — random one per visit,
     click to expand Korean meaning + example + tip + category.
+
+    source 구분:
+      'curated'  — Notion DB / admin이 가져온 일반 표현 풀
+      'feedback' — 사용자 첨삭 결과에서 자동 추출 (source_entry로 출처 추적)
     """
+    SOURCE_CHOICES = [
+        ('curated', 'Curated'),
+        ('feedback', 'From feedback'),
+        ('user_note', 'From user note'),
+    ]
+
     en = models.CharField(max_length=200, unique=True)
     ko = models.CharField(max_length=300)
     example = models.TextField(blank=True, default='')
     tip = models.TextField(blank=True, default='')
     category = models.CharField(max_length=50, blank=True, default='', db_index=True)
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='curated', db_index=True)
+    source_entry = models.ForeignKey(
+        'Entry', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='extracted_expressions',
+    )
+    source_user = models.ForeignKey(
+        'User', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='feedback_expressions',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -58,6 +78,10 @@ class Expression(models.Model):
             'example': self.example,
             'tip': self.tip,
             'category': self.category,
+            'source': self.source,
+            'sourceEntryId': self.source_entry_id,
+            'sourceUser': self.source_user.username if self.source_user_id else None,
+            'createdAt': self.created_at.isoformat() if self.created_at else None,
         }
 
 
@@ -82,6 +106,9 @@ class Entry(models.Model):
     opic_question_text = models.TextField(null=True, blank=True)
     opic_question_type = models.CharField(max_length=50, null=True, blank=True)
 
+    # Audio recording (Opic) — 파일명만 저장. 실제 파일은 data/recordings/<filename>.
+    audio_filename = models.CharField(max_length=80, blank=True, default='')
+
     completed_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -100,6 +127,7 @@ class Entry(models.Model):
             'opicQuestionIndex': self.opic_question_index,
             'opicQuestion': self.opic_question_text,
             'opicQuestionType': self.opic_question_type,
+            'audioFilename': self.audio_filename or None,
             'completedAt': self.completed_at.isoformat() if self.completed_at else None,
         }
 

@@ -213,6 +213,89 @@ def pick_random_expression():
     return Expression.objects.all()[random.randint(0, n - 1)]
 
 
+def pick_expressions_for_notification(user=None, n: int = 3, prefer_user_feedback: bool = True):
+    """알림용 표현 N개 선택. 우선 풀(본인 첨삭 + 사용자 메모 보강)에서 최대 n-1개,
+    부족하면 전체 풀(curated 포함)에서 보충.
+
+    우선 풀 = source='feedback' AND source_user=user  OR  source='user_note'
+    (user_note는 admin이 직접 등록한 학습 메모 — 전역 공유, 알림에 자주 노출시킴)
+
+    user가 None이면 우선 풀은 user_note만. Returns: list[Expression] (최대 n개).
+    """
+    import random
+    from django.db.models import Q
+
+    out: list = []
+    seen_ids: set = set()
+
+    if prefer_user_feedback:
+        priority_q = Q(source='user_note')
+        if user is not None:
+            priority_q = priority_q | Q(source='feedback', source_user=user)
+        candidates = list(Expression.objects.filter(priority_q).order_by('-id')[:60])
+        if candidates:
+            take_max = min(len(candidates), max(0, n - 1))  # 최소 1자리는 일반 풀에 양보
+            if take_max > 0:
+                picked = random.sample(candidates, take_max)
+                for e in picked:
+                    out.append(e)
+                    seen_ids.add(e.id)
+
+    if len(out) < n:
+        pool = list(Expression.objects.exclude(id__in=seen_ids))
+        if pool:
+            need = n - len(out)
+            random.shuffle(pool)
+            for e in pool[:need]:
+                out.append(e)
+
+    return out
+
+
+def upsert_feedback_expressions(entry, items, user=None) -> int:
+    """첨삭 feedback 안의 expressions[] → Expression 테이블에 upsert.
+
+    en이 unique이라 기존 행이 있으면 덮어쓰지 않고 source_entry/source_user만 비어있을 때 채움.
+    새 행은 source='feedback'으로 저장.
+    Returns: 새로 만들어진 행 개수.
+    """
+    if not items or not isinstance(items, list):
+        return 0
+    created = 0
+    for raw in items:
+        if not isinstance(raw, dict):
+            continue
+        en = (raw.get('en') or '').strip()
+        ko = (raw.get('ko') or '').strip()
+        if not en or not ko:
+            continue
+        if len(en) > 200 or len(ko) > 300:
+            continue
+        defaults = {
+            'ko': ko[:300],
+            'example': (raw.get('example') or '').strip(),
+            'tip': (raw.get('tip') or '').strip(),
+            'category': (raw.get('category') or '').strip()[:50],
+            'source': 'feedback',
+            'source_entry': entry,
+            'source_user': user,
+        }
+        try:
+            obj, was_created = Expression.objects.get_or_create(en=en[:200], defaults=defaults)
+            if was_created:
+                created += 1
+            else:
+                # 기존 행이 source_entry 없으면 채워주기 (curated 표현이 다시 나온 케이스는 건드리지 않음)
+                if obj.source == 'feedback' and obj.source_entry_id is None and entry is not None:
+                    obj.source_entry = entry
+                    if user is not None and obj.source_user_id is None:
+                        obj.source_user = user
+                    obj.save(update_fields=['source_entry', 'source_user'])
+        except Exception:
+            logger.exception(f'upsert feedback expression 실패: {en!r}')
+    return created
+
+
 def pick_random_quote():
     """Return one random quote dict from data/quotes.json, or None."""
     import random
@@ -255,21 +338,26 @@ def resolve_user_label(user_obj_or_username) -> str:
     return user_obj_or_username.display_name or user_obj_or_username.username
 
 
-def build_notification_body(*extra_lines):
-    """Append a random expression + random quote to the given body lines.
+def build_notification_body(*extra_lines, user=None, expressions_count: int = 3):
+    """Append N random expressions (본인 첨삭에서 추출된 것 우선) + random quote to body.
 
-    Returns a single string with everything joined by newlines.
+    user를 넘기면 그 user의 첨삭 표현(source='feedback')을 우선 선택하고,
+    부족하면 curated 풀에서 보충. user가 없으면 풀 전체에서 랜덤.
+
+    Returns: 줄바꿈으로 합쳐진 메시지 문자열.
     """
     lines = list(extra_lines)
-    exp = pick_random_expression()
-    if exp:
-        ex_line = f'💬 {exp.en}'
-        if exp.ko:
-            ex_line += f' — {exp.ko}'
+    picks = pick_expressions_for_notification(user=user, n=expressions_count)
+    if picks:
         lines.append('')
-        lines.append(ex_line)
+        for exp in picks:
+            line = f'💬 {exp.en}'
+            if exp.ko:
+                line += f' — {exp.ko}'
+            lines.append(line)
     q = pick_random_quote()
     if q and q.get('text'):
+        lines.append('')
         q_line = f'"{q["text"]}"'
         if q.get('author'):
             q_line += f' — {q["author"]}'
@@ -290,9 +378,12 @@ def expression_random(request):
 
 
 def expression_list(request):
-    """Return all expressions, optionally filtered by ?q= substring (en/ko/category)."""
+    """Return all expressions, optionally filtered by ?q= substring (en/ko/category).
+
+    최근 추가된 것 먼저(-created_at). admin UI에서 최신 항목이 위로 노출되도록.
+    """
     from django.db.models import Q
-    qs = Expression.objects.all().order_by('category', 'en')
+    qs = Expression.objects.all().order_by('-created_at', 'en')
     q = (request.GET.get('q') or '').strip()
     if q:
         qs = qs.filter(Q(en__icontains=q) | Q(ko__icontains=q) | Q(category__icontains=q) | Q(tip__icontains=q))
@@ -821,6 +912,7 @@ Generate exactly {count} NEW OPIc combos. Each combo is one topic with 3 connect
 Each combo MUST be a JSON object with these fields:
 - "id": short English kebab-case identifier (e.g. "yoga", "winter-sports", "morning-routine"). MUST be unique.
 - "topic": short Korean + English label e.g. "요리 (Cooking)"
+- "category": ONE Korean keyword from the allowed list below (e.g. "요리"). MUST match the allowed_categories restriction.
 - "questions": array of EXACTLY 3 objects, each with:
   - "type": one of [Description, Routine, Past Experience, Comparison, Role-play (Ask), Role-play (Solve), Opinion]
   - "text": a friendly OPIc-style English question (full sentence, conversational tone like "Tell me about...")
@@ -829,6 +921,11 @@ A typical combo structure is: Description → Past Experience → Comparison.
 Alternatives: Description → Routine → Past Experience, or Role-play (Ask) → Role-play (Solve) → Past Experience.
 
 {topic_directive}
+
+ALLOWED CATEGORIES (사용자가 고른 OPIc Background Survey 카테고리):
+{allowed_categories}
+- Every combo MUST belong to one of these categories. Set `category` to the matching keyword.
+- If the allowed list is "(no restriction)", you may pick any short Korean keyword.
 
 CRITICAL — DO NOT use any of these already-taken combo IDs (case-insensitive):
 {existing_csv}
@@ -852,7 +949,10 @@ def _combos_extras_path():
 
 
 def combos_extras_list(request):
-    """Public read: returns AI-added combos. Frontend appends to its OPIC_COMBOS const."""
+    """Public read: returns AI-added combos. Frontend appends to its OPIC_COMBOS const.
+
+    응답 시 각 콤보에 category가 비어있으면 topic에서 자동 추출해 채운다.
+    """
     path = _combos_extras_path()
     if not path.is_file():
         return JsonResponse({'combos': []})
@@ -862,6 +962,9 @@ def combos_extras_list(request):
         data = []
     if not isinstance(data, list):
         data = []
+    for c in data:
+        if isinstance(c, dict) and not (c.get('category') or '').strip():
+            c['category'] = _derive_category(c.get('topic') or '')
     return JsonResponse({'combos': data})
 
 
@@ -892,6 +995,11 @@ def admin_combos_fetch(request):
         existing_ids_in = []
     existing_lower = {str(x).strip().lower() for x in existing_ids_in if str(x).strip()}
 
+    # 사용자가 고른 카테고리 풀 안에서만 생성하도록 prompt에 명시.
+    allowed_cats_in = data.get('allowed_categories') or []
+    allowed_cats = [str(c).strip() for c in allowed_cats_in if isinstance(c, str) and c.strip()]
+    allowed_str = ', '.join(f'"{c}"' for c in allowed_cats) if allowed_cats else '(no restriction)'
+
     # Merge with whatever we already have in extras file
     path = _combos_extras_path()
     extras_existing = []
@@ -913,6 +1021,7 @@ def admin_combos_fetch(request):
         count=count,
         existing_csv=existing_csv,
         topic_directive=_combo_topic_directive(topic_hint),
+        allowed_categories=allowed_str,
     )
 
     try:
@@ -928,12 +1037,14 @@ def admin_combos_fetch(request):
             'raw_preview': raw[:600],
         }, status=502)
 
-    added_items, skipped_dup, skipped_bad = [], 0, 0
+    added_items, skipped_dup, skipped_bad, skipped_cat = [], 0, 0, 0
+    allowed_set = {c for c in allowed_cats}  # 빈 set이면 무제한
     for row in parsed:
         if not isinstance(row, dict):
             skipped_bad += 1; continue
         cid = str(row.get('id') or '').strip()
         topic = str(row.get('topic') or '').strip()
+        category = str(row.get('category') or '').strip()
         questions = row.get('questions') or []
         if not cid or not topic or not isinstance(questions, list) or len(questions) != 3:
             skipped_bad += 1; continue
@@ -949,8 +1060,13 @@ def admin_combos_fetch(request):
             skipped_bad += 1; continue
         if cid.lower() in existing_lower:
             skipped_dup += 1; continue
+        if not category:
+            category = _derive_category(topic)
+        # 사용자가 카테고리 제약을 걸었다면 그 안에 없는 콤보는 풀에 안 넣음.
+        if allowed_set and category not in allowed_set:
+            skipped_cat += 1; continue
         existing_lower.add(cid.lower())
-        added_items.append({'id': cid, 'topic': topic, 'questions': ok_qs})
+        added_items.append({'id': cid, 'topic': topic, 'category': category, 'questions': ok_qs})
 
     if added_items:
         extras_existing.extend(added_items)
@@ -965,8 +1081,10 @@ def admin_combos_fetch(request):
         'added_items': added_items,
         'skipped_duplicate': skipped_dup,
         'skipped_invalid': skipped_bad,
+        'skipped_category': skipped_cat,
         'total_extras': len(extras_existing),
         'topic_hint': topic_hint,
+        'allowed_categories': allowed_cats,
         'model': model,
     })
 
@@ -1328,6 +1446,527 @@ def admin_expressions_extract(request):
     })
 
 
+# ============ Admin: User notes → expressions (raw or AI-enriched) ============
+
+EXPRESSION_NOTE_ENRICH_PROMPT = """\
+You are helping a Korean learner curate their personal English expression library.
+Below is a free-form note they wrote — phrases they heard, learned, or want to remember.
+Lines may be mixed Korean/English, may be partial, may include extra commentary.
+
+Your job: Turn this note into a clean list of {count} expressions worth adding to a study library.
+
+Rules:
+- Output JSON ONLY — a single array of objects. No prose, no markdown fences.
+- Each object MUST have: en, ko, example, tip, category
+  - en: natural English expression / collocation (3-8 words ideal, not a whole sentence)
+  - ko: short Korean meaning (under 40 chars)
+  - example: one natural English example sentence
+  - tip: short Korean usage note (when/how to use it, under 60 chars)
+  - category: one short Korean tag (예: '감정 표현', '의견', '연결어', '경험 묘사', '회화 표현', '비즈니스')
+- If the user wrote Korean, translate to natural English. If they wrote English, keep and polish it.
+- Skip overly common single words (good, nice, hello) — focus on chunks worth practicing.
+- Deduplicate. Don't include items already in this exclusion list (en):
+  EXCLUDE: [{existing_csv}]
+
+User's note:
+\"\"\"
+{source}
+\"\"\"
+
+Output ONLY the JSON array:"""
+
+
+def _parse_raw_notes(text: str) -> list[dict]:
+    """라인별로 분리해서 (en, ko) 추출. 구분자: '—' '–' '-' ':' '|' '/' 우선순위.
+
+    구분자 없으면 라인 전체가 en. 빈 줄/주석(#로 시작)은 스킵.
+    Returns: list of {en, ko, example:'', tip:'', category:''}
+    """
+    seps = ['—', '–', '::', ':', '|', '/', ' - ', ' -- ']
+    out: list[dict] = []
+    seen: set = set()
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#'):
+            continue
+        en, ko = line, ''
+        for sep in seps:
+            if sep in line:
+                left, _, right = line.partition(sep)
+                en = left.strip()
+                ko = right.strip()
+                if en and ko:
+                    break
+                en, ko = line, ''
+        en = en[:200].strip(' .,;')
+        ko = ko[:300].strip()
+        if not en:
+            continue
+        key = en.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({'en': en, 'ko': ko, 'example': '', 'tip': '', 'category': ''})
+    return out
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def admin_expressions_from_notes(request):
+    """사용자 학습 노트를 미리보기 items로 변환 (저장은 안 함).
+
+    Body:
+      { "text": "...", "mode": "raw"|"ai", "model": "haiku"|"sonnet"|"opus", "count": 12 }
+
+    raw 모드: 라인별 단순 파싱 (en — ko 패턴 인식)
+    ai  모드: Claude 호출해서 정제된 items 받기
+    """
+    if not _require_admin(request):
+        return JsonResponse({'error': '관리자 인증 필요'}, status=403)
+    try:
+        data = json.loads(request.body or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    text = (data.get('text') or '').strip()
+    mode = (data.get('mode') or 'raw').strip().lower()
+    if not text:
+        return JsonResponse({'error': '본문이 비어있어요'}, status=400)
+    if mode not in {'raw', 'ai'}:
+        return JsonResponse({'error': 'mode는 raw 또는 ai 여야 합니다'}, status=400)
+
+    if mode == 'raw':
+        items = _parse_raw_notes(text[:30000])
+        return JsonResponse({'status': 'ok', 'mode': 'raw', 'items': items})
+
+    # AI mode
+    model = (data.get('model') or 'sonnet').strip().lower()
+    if model not in {'haiku', 'sonnet', 'opus'}:
+        model = 'sonnet'
+    try:
+        count = max(3, min(40, int(data.get('count', 12))))
+    except (TypeError, ValueError):
+        count = 12
+
+    existing_qs = list(Expression.objects.values_list('en', flat=True))
+    existing_for_prompt = existing_qs if len(existing_qs) <= 250 else existing_qs[:250]
+    existing_csv = ', '.join(f'"{e}"' for e in existing_for_prompt)
+
+    prompt = EXPRESSION_NOTE_ENRICH_PROMPT.format(
+        count=count,
+        existing_csv=existing_csv,
+        source=text[:20000],
+    )
+    try:
+        raw = call_claude(prompt, model=model, timeout=180)
+    except ClaudeCodeError as e:
+        return JsonResponse({'error': f'Claude 호출 실패: {e}'}, status=500)
+
+    parsed, parse_err = _extract_json(raw)
+    if parse_err or not isinstance(parsed, list):
+        return JsonResponse({
+            'error': 'AI 응답을 파싱할 수 없습니다.',
+            'parse_error': parse_err,
+            'raw_preview': raw[:600],
+        }, status=502)
+
+    # normalize + dedupe by en (case-insensitive). 저장은 안 하고 미리보기만.
+    cleaned: list[dict] = []
+    seen: set = set()
+    existing_lower = {e.lower() for e in existing_qs}
+    for row in parsed:
+        if not isinstance(row, dict):
+            continue
+        en = str(row.get('en') or '').strip()[:200]
+        ko = str(row.get('ko') or '').strip()[:300]
+        if not en or not ko:
+            continue
+        key = en.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append({
+            'en': en,
+            'ko': ko,
+            'example': str(row.get('example') or '').strip(),
+            'tip': str(row.get('tip') or '').strip(),
+            'category': str(row.get('category') or '').strip()[:50],
+            'already_in_library': key in existing_lower,
+        })
+
+    return JsonResponse({
+        'status': 'ok',
+        'mode': 'ai',
+        'model': model,
+        'items': cleaned,
+        'received': len(parsed),
+    })
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def admin_expressions_save_notes(request):
+    """미리보기에서 편집된 items[]를 source='user_note'로 라이브러리에 저장.
+
+    Body: { "items": [{en, ko, example, tip, category}, ...] }
+    en이 unique이라 기존 행 있으면 스킵.
+    """
+    if not _require_admin(request):
+        return JsonResponse({'error': '관리자 인증 필요'}, status=403)
+    try:
+        data = json.loads(request.body or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    items = data.get('items')
+    if not isinstance(items, list) or not items:
+        return JsonResponse({'error': 'items가 비어있어요'}, status=400)
+
+    existing_lower = {e.lower() for e in Expression.objects.values_list('en', flat=True)}
+    added, skipped_dup, skipped_bad = 0, 0, 0
+    new_rows: list = []
+    for row in items:
+        if not isinstance(row, dict):
+            skipped_bad += 1
+            continue
+        en = str(row.get('en') or '').strip()[:200]
+        ko = str(row.get('ko') or '').strip()[:300]
+        if not en or not ko:
+            skipped_bad += 1
+            continue
+        if en.lower() in existing_lower:
+            skipped_dup += 1
+            continue
+        existing_lower.add(en.lower())
+        new_rows.append(Expression(
+            en=en, ko=ko,
+            example=str(row.get('example') or '').strip(),
+            tip=str(row.get('tip') or '').strip(),
+            category=str(row.get('category') or '').strip()[:50],
+            source='user_note',
+        ))
+    if new_rows:
+        Expression.objects.bulk_create(new_rows, ignore_conflicts=True)
+        added_ens = [r.en for r in new_rows]
+        added_items = [e.to_dict() for e in Expression.objects.filter(en__in=added_ens)]
+        added = len(added_items)
+    else:
+        added_items = []
+
+    return JsonResponse({
+        'status': 'ok',
+        'added': added,
+        'added_items': added_items,
+        'skipped_duplicate': skipped_dup,
+        'skipped_invalid': skipped_bad,
+        'total_now': Expression.objects.count(),
+    })
+
+
+# ============ Admin: User notes → combos (AI-enriched) ============
+
+COMBO_NOTE_ENRICH_PROMPT = """\
+You are helping a Korean OPIc learner curate their custom combo library.
+Below is a free-form note they wrote — combo topics with 3 questions each,
+in Korean or mixed Korean/English. Lines may be numbered (e.g. "2. 호텔 묘사"),
+and combos are typically separated by a blank line and/or a topic header
+(e.g. "집휴가-서베이").
+
+Your job: Turn this note into a clean JSON array of OPIc combos.
+
+ALLOWED CATEGORIES (사용자가 고른 OPIc Background Survey 카테고리들):
+{allowed_categories}
+- Every combo's `category` MUST be one of the above (한국어 한 단어). Match the topic to the closest category.
+  If a combo doesn't fit any allowed category, SKIP it (don't invent a new category).
+- If the allowed list is empty, use any short Korean keyword (공원/음악/집/카페/...) as category.
+
+Output discipline:
+- Return ONLY a JSON array. No prose. No markdown fences. Starts with `[`, ends with `]`.
+- Each combo MUST be: {{"id": "...", "topic": "...", "category": "...", "questions": [{{...}}, {{...}}, {{...}}]}}
+- Exactly 3 questions per combo.
+- id: short kebab-case English slug, unique (e.g. "hotel-survey", "home-vacation-survey", "music-listening-survey").
+- topic: short Korean OPIc-style topic label (e.g. "호텔-서베이", "집휴가-서베이", "음악감상-서베이").
+- category: ONE Korean keyword from the allowed list above (예: "공원", "호텔", "음악").
+- Each question:
+    - "type": one short Korean tag — pick from: 묘사, 루틴, 경험, 롤플, 계기, 비교, 변화
+      (infer from the user's text — e.g. "묘사" → 묘사, "루틴" → 루틴, "경험/인상깊었던" → 경험,
+       "처음 ... 계기" → 계기, "잘못된 ... 롤플/티켓 구매 롤플" → 롤플)
+    - "text": natural OPIc-style English question (15~35 words), AL-level phrasing.
+      Translate the Korean intent into a typical OPIc question. Use 2nd person, casual register.
+      Examples:
+        "호텔 묘사" → "I'd like to know about hotels you usually stay at. Could you describe one of your favorite hotels? What does it look like and what makes it special?"
+        "마지막으로 집에서 보낸 휴가" → "Could you tell me about the last time you spent a vacation at home? What did you do during that time and how did you spend your days?"
+- Skip lines that are pure section headers without 3 follow-up questions.
+- If the user's note is ambiguous, infer the most likely OPIc-survey-style interpretation.
+
+CRITICAL — DO NOT use any of these already-taken combo IDs (case-insensitive):
+{existing_csv}
+
+User's note:
+\"\"\"
+{source}
+\"\"\"
+
+Output ONLY the JSON array:"""
+
+
+def _derive_category(topic: str) -> str:
+    """콤보 topic에서 한국어 카테고리 키워드 자동 추출.
+    '공원 (Park)' → '공원' / '기술 / AI (Technology)' → '기술' /
+    '호텔-서베이' → '호텔' / '날씨·계절' → '날씨'.
+    Frontend의 deriveCategory()와 동일 규칙.
+    """
+    if not topic:
+        return ''
+    s = topic.split('(', 1)[0].strip()
+    s = s.split('/', 1)[0].strip()
+    s = s.split('-', 1)[0].strip()
+    s = s.split('·', 1)[0].strip()
+    s = s.split(',', 1)[0].strip()
+    return s
+
+
+def _parse_raw_combos(text: str) -> list[dict]:
+    """라인 그룹별 콤보 파싱 (raw 모드).
+
+    그룹 = 빈 줄로 구분. 한 그룹에 정확히 3개 또는 4개 라인이면 콤보로 인식.
+    4개면 첫 줄을 topic header로, 3개면 topic 비워둠.
+    질문 텍스트 앞의 "숫자. " 패턴은 제거. type은 키워드 휴리스틱으로 추정.
+    영문 변환은 안 함 (AI 모드 권장).
+    """
+    import re
+    out: list[dict] = []
+    blocks = re.split(r'\n\s*\n', text.strip())
+    type_map = [
+        ('묘사', '묘사'), ('루틴', '루틴'), ('경험', '경험'),
+        ('롤플', '롤플'), ('계기', '계기'), ('비교', '비교'), ('변화', '변화'),
+    ]
+
+    def guess_type(q: str) -> str:
+        for k, v in type_map:
+            if k in q:
+                return v
+        return '묘사'
+
+    for blk in blocks:
+        lines = [l.strip() for l in blk.splitlines() if l.strip() and not l.strip().startswith('#')]
+        if len(lines) < 3:
+            continue
+        topic = ''
+        questions_raw: list[str] = []
+        if len(lines) >= 4:
+            topic = lines[0]
+            questions_raw = lines[1:4]
+        else:
+            questions_raw = lines[:3]
+        # 번호 prefix 제거 (e.g. "2. 호텔 묘사" → "호텔 묘사")
+        questions = []
+        for q in questions_raw:
+            q = re.sub(r'^\s*\d+[\.\)]\s*', '', q).strip()
+            if not q:
+                continue
+            questions.append({'type': guess_type(q), 'text': q})
+        if len(questions) != 3:
+            continue
+        # id 생성 — topic이 있으면 거기서, 없으면 첫 질문에서. 한국어 그대로 + 인덱스
+        base = topic or questions[0]['text']
+        slug = re.sub(r'[^0-9a-zA-Z가-힣]+', '-', base).strip('-').lower()[:40] or f'combo-{len(out)+1}'
+        out.append({
+            'id': slug,
+            'topic': topic,
+            'category': _derive_category(topic) or _derive_category(questions[0]['text']),
+            'questions': questions,
+        })
+    return out
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def admin_combos_from_notes(request):
+    """사용자 콤보 노트를 미리보기 items로 변환 (저장 안 함).
+
+    Body: { "text": "...", "mode": "raw"|"ai", "model": "haiku"|"sonnet"|"opus" }
+    """
+    if not _require_admin(request):
+        return JsonResponse({'error': '관리자 인증 필요'}, status=403)
+    try:
+        data = json.loads(request.body or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    text = (data.get('text') or '').strip()
+    mode = (data.get('mode') or 'ai').strip().lower()
+    if not text:
+        return JsonResponse({'error': '본문이 비어있어요'}, status=400)
+    if mode not in {'raw', 'ai'}:
+        return JsonResponse({'error': 'mode는 raw 또는 ai 여야 합니다'}, status=400)
+
+    # 기존 콤보 id (frontend OPIC_COMBOS 빌트인 + extras 파일)
+    existing_ids_in = data.get('existing_ids') or []
+    existing_lower = {str(x).strip().lower() for x in existing_ids_in if str(x).strip()}
+    path = _combos_extras_path()
+    if path.is_file():
+        try:
+            for c in json.loads(path.read_text(encoding='utf-8')) or []:
+                if isinstance(c, dict) and c.get('id'):
+                    existing_lower.add(str(c['id']).strip().lower())
+        except Exception:
+            pass
+
+    # 허용 카테고리 — frontend가 사용자 선택을 넘기면 그 안에서만 생성하도록 prompt에 명시.
+    allowed_cats_in = data.get('allowed_categories') or []
+    allowed_cats = [str(c).strip() for c in allowed_cats_in if isinstance(c, str) and c.strip()]
+
+    if mode == 'raw':
+        items = _parse_raw_combos(text[:30000])
+        for it in items:
+            it['already_in_library'] = it['id'].lower() in existing_lower
+        return JsonResponse({'status': 'ok', 'mode': 'raw', 'items': items})
+
+    # AI mode
+    model = (data.get('model') or 'sonnet').strip().lower()
+    if model not in {'haiku', 'sonnet', 'opus'}:
+        model = 'sonnet'
+
+    existing_for_prompt = list(existing_lower)[:200]
+    existing_csv = ', '.join(f'"{x}"' for x in existing_for_prompt) if existing_for_prompt else '(none)'
+    allowed_str = ', '.join(f'"{c}"' for c in allowed_cats) if allowed_cats else '(no restriction — pick any short Korean keyword)'
+    prompt = COMBO_NOTE_ENRICH_PROMPT.format(
+        existing_csv=existing_csv,
+        source=text[:20000],
+        allowed_categories=allowed_str,
+    )
+    try:
+        raw = call_claude(prompt, model=model, timeout=240)
+    except ClaudeCodeError as e:
+        return JsonResponse({'error': f'Claude 호출 실패: {e}'}, status=500)
+
+    parsed, parse_err = _extract_json(raw)
+    if parse_err or not isinstance(parsed, list):
+        return JsonResponse({
+            'error': 'AI 응답을 파싱할 수 없습니다.',
+            'parse_error': parse_err,
+            'raw_preview': raw[:600],
+        }, status=502)
+
+    cleaned: list[dict] = []
+    for row in parsed:
+        if not isinstance(row, dict):
+            continue
+        cid = str(row.get('id') or '').strip()
+        topic = str(row.get('topic') or '').strip()
+        category = str(row.get('category') or '').strip()
+        questions_in = row.get('questions') or []
+        if not cid or not isinstance(questions_in, list) or len(questions_in) != 3:
+            continue
+        qs = []
+        for q in questions_in:
+            if not isinstance(q, dict):
+                break
+            qtype = str(q.get('type') or '').strip()
+            qtext = str(q.get('text') or '').strip()
+            if not qtype or not qtext:
+                break
+            qs.append({'type': qtype[:30], 'text': qtext[:600]})
+        if len(qs) != 3:
+            continue
+        if not category:
+            category = _derive_category(topic)
+        cleaned.append({
+            'id': cid[:50],
+            'topic': topic[:80],
+            'category': category[:40],
+            'questions': qs,
+            'already_in_library': cid.lower() in existing_lower,
+        })
+
+    return JsonResponse({
+        'status': 'ok',
+        'mode': 'ai',
+        'model': model,
+        'items': cleaned,
+        'received': len(parsed),
+    })
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def admin_combos_save_notes(request):
+    """미리보기에서 편집된 콤보 items[]를 combos_extra.json에 append.
+
+    Body: { "items": [{id, topic, questions:[{type, text}, ...]}, ...] }
+    id 중복 (extras 파일 안에 있는 것)이면 스킵. 빌트인과의 중복은 frontend가 existing_ids로 막을 책임.
+    """
+    if not _require_admin(request):
+        return JsonResponse({'error': '관리자 인증 필요'}, status=403)
+    try:
+        data = json.loads(request.body or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    items_in = data.get('items')
+    if not isinstance(items_in, list) or not items_in:
+        return JsonResponse({'error': 'items가 비어있어요'}, status=400)
+
+    path = _combos_extras_path()
+    extras_existing: list = []
+    if path.is_file():
+        try:
+            extras_existing = json.loads(path.read_text(encoding='utf-8')) or []
+        except Exception:
+            extras_existing = []
+    if not isinstance(extras_existing, list):
+        extras_existing = []
+    existing_lower = {str(c.get('id', '')).strip().lower()
+                      for c in extras_existing if isinstance(c, dict)}
+    # frontend가 보내준 builtin id도 차단
+    builtin_in = data.get('existing_ids') or []
+    if isinstance(builtin_in, list):
+        for x in builtin_in:
+            sx = str(x).strip().lower()
+            if sx:
+                existing_lower.add(sx)
+
+    added, skipped_dup, skipped_bad = [], 0, 0
+    for row in items_in:
+        if not isinstance(row, dict):
+            skipped_bad += 1; continue
+        cid = str(row.get('id') or '').strip()[:50]
+        topic = str(row.get('topic') or '').strip()[:80]
+        category = str(row.get('category') or '').strip()[:40]
+        questions_raw = row.get('questions') or []
+        if not cid or not isinstance(questions_raw, list) or len(questions_raw) != 3:
+            skipped_bad += 1; continue
+        ok_qs = []
+        for q in questions_raw:
+            if not isinstance(q, dict):
+                break
+            qtype = str(q.get('type') or '').strip()[:30]
+            qtext = str(q.get('text') or '').strip()[:600]
+            if not qtype or not qtext:
+                break
+            ok_qs.append({'type': qtype, 'text': qtext})
+        if len(ok_qs) != 3:
+            skipped_bad += 1; continue
+        if cid.lower() in existing_lower:
+            skipped_dup += 1; continue
+        existing_lower.add(cid.lower())
+        if not category:
+            category = _derive_category(topic)
+        added.append({'id': cid, 'topic': topic, 'category': category, 'questions': ok_qs})
+
+    if added:
+        extras_existing.extend(added)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(extras_existing, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+    return JsonResponse({
+        'status': 'ok',
+        'added': len(added),
+        'added_items': added,
+        'skipped_duplicate': skipped_dup,
+        'skipped_invalid': skipped_bad,
+        'total_extras': len(extras_existing),
+    })
+
+
 # ============ Entries ============
 
 @csrf_exempt
@@ -1365,7 +2004,28 @@ def entries_collection(request):
         opic_question_text=data.get('opicQuestion'),
         opic_question_type=data.get('opicQuestionType'),
     )
-    return JsonResponse(entry.to_dict(), status=201)
+
+    # 첨삭에서 추출된 expressions를 라이브러리에 자동 반영 (실패는 entry 저장 막지 않음).
+    extracted = 0
+    fb = data.get('feedback')
+    if isinstance(fb, dict):
+        try:
+            extracted = upsert_feedback_expressions(entry, fb.get('expressions'), user=user)
+        except Exception:
+            logger.exception('expressions 자동 추출 실패')
+
+    # 녹음 파일 link — transcribe에서 keep_audio로 반환된 audio_id가 있으면 entry에 연결.
+    audio_id = (data.get('audioId') or '').strip()
+    if audio_id and entry.mode == 'opic':
+        try:
+            _link_temp_audio_to_entry(entry, audio_id)
+        except Exception:
+            logger.exception('audio link 실패')
+
+    resp = entry.to_dict()
+    if extracted:
+        resp['extractedExpressions'] = extracted
+    return JsonResponse(resp, status=201)
 
 
 @csrf_exempt
@@ -1378,6 +2038,14 @@ def entry_detail(request, entry_id: int):
         entry = Entry.objects.get(id=entry_id, user=user)
     except Entry.DoesNotExist:
         return JsonResponse({'error': 'Not found'}, status=404)
+    # 녹음 파일 정리
+    if entry.audio_filename:
+        try:
+            p = _recordings_dir() / entry.audio_filename
+            if p.is_file():
+                p.unlink()
+        except Exception:
+            logger.exception('audio 파일 삭제 실패')
     entry.delete()
     return JsonResponse({'status': 'deleted'})
 
@@ -1702,7 +2370,7 @@ def test_notify(request):
         has_opic = entries.filter(mode='opic').exists()
         user_label = resolve_user_label(me) if me else ''
         status_line = build_status_line(user_label, has_diary, has_opic)
-        message = build_notification_body(status_line)
+        message = build_notification_body(status_line, user=me)
 
     try:
         result = send_via_slack(
@@ -1774,3 +2442,158 @@ def import_data(request):
                 skipped += 1
 
     return JsonResponse({'imported': imported, 'skipped': skipped})
+
+
+# ============ STT (faster-whisper) + 녹음 저장 ============
+
+# 녹음은 브라우저 MediaRecorder가 통째로 한 파일로 만든 뒤 multipart로 업로드.
+# 5분 가까이 말해도 webm/opus 기준 ~3MB 안팎이지만, 보호용 상한.
+_STT_MAX_BYTES = 25 * 1024 * 1024  # 25MB hard cap
+_RECORDINGS_SUBDIR = 'recordings'
+_TMP_RECORDINGS_SUBDIR = 'recordings/tmp'  # entry에 link되기 전 임시 보관 — keep_audio=true일 때만 생성
+
+
+def _recordings_dir():
+    from django.conf import settings as ds
+    from pathlib import Path
+    return Path(ds.BASE_DIR) / 'data' / _RECORDINGS_SUBDIR
+
+
+def _tmp_recordings_dir():
+    from django.conf import settings as ds
+    from pathlib import Path
+    return Path(ds.BASE_DIR) / 'data' / _TMP_RECORDINGS_SUBDIR
+
+
+@csrf_exempt
+@require_http_methods(['POST'])
+def transcribe(request):
+    """multipart/form-data로 audio 파일 받아 텍스트로 변환.
+
+    필드:
+      audio (file, 필수) — webm/ogg/mp4/wav 등 ffmpeg가 디코딩 가능한 포맷
+      language (str, 선택) — 기본 'en'
+      keep_audio (str '1'/'true', 선택) — 들어오면 audio를 임시 보관하고 audio_id 반환.
+        나중에 entries POST 시 audio_id를 함께 보내면 entry에 link됨.
+    """
+    audio_file = request.FILES.get('audio')
+    if audio_file is None:
+        return JsonResponse({'error': 'audio 파일이 필요합니다 (multipart 필드명: audio)'}, status=400)
+
+    size = getattr(audio_file, 'size', 0) or 0
+    if size <= 0:
+        return JsonResponse({'error': '빈 파일'}, status=400)
+    if size > _STT_MAX_BYTES:
+        return JsonResponse({
+            'error': f'파일이 너무 큽니다 ({size} bytes > {_STT_MAX_BYTES}).'
+        }, status=413)
+
+    language = (request.POST.get('language') or 'en').strip() or 'en'
+    keep_audio = (request.POST.get('keep_audio') or '').strip().lower() in {'1', 'true', 'yes'}
+
+    name = (audio_file.name or 'rec.webm')
+    ext = name.rsplit('.', 1)[-1].lower() if '.' in name else 'webm'
+    if ext not in {'webm', 'ogg', 'mp4', 'm4a', 'wav', 'mp3', 'flac', 'aac'}:
+        ext = 'webm'
+
+    # 보관 모드면 tmp 디렉토리에 영구 파일명으로 저장. 비보관 모드는 tempfile.
+    audio_id = None
+    if keep_audio:
+        import uuid
+        audio_id = f'{uuid.uuid4().hex}.{ext}'
+        tmp_dir = _tmp_recordings_dir()
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        save_path = tmp_dir / audio_id
+        tmp_path = str(save_path)
+        with open(tmp_path, 'wb') as f:
+            for chunk in audio_file.chunks():
+                f.write(chunk)
+    else:
+        import tempfile
+        tmp = tempfile.NamedTemporaryFile(suffix=f'.{ext}', delete=False)
+        tmp_path = tmp.name
+        for chunk in audio_file.chunks():
+            tmp.write(chunk)
+        tmp.close()
+
+    try:
+        from . import stt as stt_mod
+        result = stt_mod.transcribe_file(tmp_path, language=language)
+        resp = {
+            'text': result['text'],
+            'duration': result['duration'],
+            'language': result['language'],
+            'model': os.environ.get('WHISPER_MODEL', 'base.en'),
+        }
+        if audio_id:
+            resp['audio_id'] = audio_id
+        return JsonResponse(resp)
+    except RuntimeError as e:
+        return JsonResponse({'error': str(e), 'type': 'stt_model_error'}, status=500)
+    except Exception as e:
+        logger.exception('STT 변환 실패')
+        return JsonResponse({
+            'error': f'STT 변환 실패: {type(e).__name__}: {e}',
+            'type': 'stt_runtime_error',
+        }, status=500)
+    finally:
+        # 비보관 모드만 임시 파일 삭제. 보관 모드면 tmp 디렉토리에 그대로 둠 (entries POST가 옮김).
+        if not keep_audio:
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
+
+
+def _link_temp_audio_to_entry(entry, audio_id: str) -> bool:
+    """tmp 디렉토리의 audio 파일을 entry 영구 위치로 이동하고 entry.audio_filename 저장."""
+    if not audio_id:
+        return False
+    # audio_id 형식 검증: 16진수 + 확장자만 허용 (path traversal 방지)
+    import re
+    m = re.fullmatch(r'([a-f0-9]{16,64})\.([a-z0-9]{1,5})', audio_id.lower())
+    if not m:
+        logger.warning(f'잘못된 audio_id 형식: {audio_id!r}')
+        return False
+    src = _tmp_recordings_dir() / audio_id
+    if not src.is_file():
+        logger.warning(f'tmp audio 파일 없음: {src}')
+        return False
+    ext = m.group(2)
+    dst_dir = _recordings_dir()
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    new_name = f'{entry.id}.{ext}'
+    dst = dst_dir / new_name
+    try:
+        src.replace(dst)
+    except Exception:
+        logger.exception('audio 파일 이동 실패')
+        return False
+    entry.audio_filename = new_name
+    entry.save(update_fields=['audio_filename'])
+    return True
+
+
+def entry_audio(request, entry_id: int):
+    """GET 본인 entry의 녹음 파일 서빙."""
+    user = _current_user(request)
+    if user is None:
+        return JsonResponse({'error': '로그인 필요'}, status=401)
+    try:
+        entry = Entry.objects.get(id=entry_id, user=user)
+    except Entry.DoesNotExist:
+        return JsonResponse({'error': 'Not found'}, status=404)
+    if not entry.audio_filename:
+        return JsonResponse({'error': '녹음 파일 없음'}, status=404)
+    path = _recordings_dir() / entry.audio_filename
+    if not path.is_file():
+        return JsonResponse({'error': '파일 누락'}, status=410)
+    from django.http import FileResponse
+    ext = entry.audio_filename.rsplit('.', 1)[-1].lower()
+    mime = {
+        'webm': 'audio/webm', 'ogg': 'audio/ogg',
+        'mp4': 'audio/mp4', 'm4a': 'audio/mp4',
+        'wav': 'audio/wav', 'mp3': 'audio/mpeg',
+        'flac': 'audio/flac', 'aac': 'audio/aac',
+    }.get(ext, 'application/octet-stream')
+    return FileResponse(open(path, 'rb'), content_type=mime)

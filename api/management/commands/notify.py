@@ -20,7 +20,7 @@ from django.conf import settings as django_settings
 from django.core.management.base import BaseCommand
 
 from api.mailer import send_via_slack, MailerError
-from api.models import Entry
+from api.models import Entry, User
 from api.views import get_settings, build_notification_body, build_status_line, resolve_user_label
 
 
@@ -85,8 +85,18 @@ class Command(BaseCommand):
         user_label = resolve_user_label(notify_user)
         status_line = build_status_line(user_label, has_diary, has_opic)
 
+        # 사용자별 feedback 표현 우선 픽을 위해 User 객체 resolve
+        user_obj = None
+        if notify_user:
+            try:
+                user_obj = User.objects.get(username=notify_user)
+            except User.DoesNotExist:
+                pass
+
         title = '🌙 오늘의 영어 시간'
-        message = build_notification_body(random.choice(FLAVORS), status_line)
+        message = build_notification_body(
+            random.choice(FLAVORS), status_line, user=user_obj,
+        )
 
         if options['dry_run']:
             self.stdout.write('=== DRY RUN ===')
