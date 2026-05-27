@@ -2279,6 +2279,18 @@ def settings_view(request):
     if any(k in to_save for k in int_fields):
         _regenerate_crontab()
     s['notify_hours_preview'] = compute_notify_hours(s)
+    # POST 응답에도 GET과 동일하게 slots_preview 채움 — 안 채우면 frontend가
+    # 빈 배열로 잘못 해석해서 저장 직후 "알림 비활성화"로 표시되는 버그.
+    s['notify_slots_preview'] = [{'h': h, 'm': m} for h, m in compute_notify_slots(s)]
+    s['last_notify_run'] = _notify_log_mtime()
+    # tunnel URL
+    from pathlib import Path
+    from django.conf import settings as ds
+    tunnel_file = Path(ds.BASE_DIR) / 'data' / 'tunnel_url.txt'
+    if tunnel_file.exists():
+        url = tunnel_file.read_text().strip()
+        if url:
+            s['tunnel_url'] = url
     # Mask admin-only secrets in response too
     for k in ADMIN_ONLY_SETTING_KEYS:
         v = s.get(k, '')
