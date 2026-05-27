@@ -9850,7 +9850,7 @@ Now output ONLY the JSON object:`;
     }
   }
 
-  function _minutesUntilNext(slots) {
+  function _untilNext(slots) {
     if (!Array.isArray(slots) || slots.length === 0) return null;
     const now = new Date();
     const candidates = [];
@@ -9862,8 +9862,14 @@ Now output ONLY the JSON object:`;
     }
     candidates.sort((a, b) => a - b);
     const next = candidates[0];
-    const diffMs = next - now;
-    return { next, minutes: Math.max(0, Math.round(diffMs / 60000)) };
+    const totalSec = Math.max(0, Math.floor((next - now) / 1000));
+    return {
+      next,
+      totalSec,
+      hours: Math.floor(totalSec / 3600),
+      minutes: Math.floor((totalSec % 3600) / 60),
+      seconds: totalSec % 60,
+    };
   }
 
   let _nextNotifyInterval = null;
@@ -9872,18 +9878,21 @@ Now output ONLY the JSON object:`;
     if (!el) return;
     if (_nextNotifyInterval) { clearInterval(_nextNotifyInterval); _nextNotifyInterval = null; }
     const update = () => {
-      const info = _minutesUntilNext(slots);
+      const info = _untilNext(slots);
       if (!info) { el.textContent = ''; return; }
       const hh = info.next.getHours().toString().padStart(2, '0');
       const mm = info.next.getMinutes().toString().padStart(2, '0');
-      const tag = info.minutes < 60
-        ? `<strong>${info.minutes}분 후</strong>`
-        : `<strong>${Math.floor(info.minutes/60)}시간 ${info.minutes%60}분 후</strong>`;
+      const ss = info.seconds.toString().padStart(2, '0');
+      const mmRem = info.minutes.toString().padStart(2, '0');
+      // 카운트다운: 1시간 미만이면 MM:SS, 그 이상이면 H시간 MM:SS
+      const tag = info.hours > 0
+        ? `<strong>${info.hours}시간 ${mmRem}:${ss} 후</strong>`
+        : `<strong>${mmRem}:${ss} 후</strong>`;
       const dayLabel = info.next.toDateString() === new Date().toDateString() ? '오늘' : '내일';
       el.innerHTML = `⏰ 다음 알림: ${dayLabel} ${hh}:${mm} · ${tag}`;
     };
     update();
-    _nextNotifyInterval = setInterval(update, 30 * 1000);
+    _nextNotifyInterval = setInterval(update, 1000);  // 1초 단위 갱신
   }
   function renderLastNotifyRun(iso) {
     const el = document.getElementById('last-notify-run');
