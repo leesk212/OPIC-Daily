@@ -358,9 +358,9 @@ def build_notification(user=None, status_line: str = '', flavor: str = '', expre
     """
     picks = pick_expressions_for_notification(user=user, n=expressions_count)
 
-    # title: 첫 표현 1개 (push 미리보기 title 줄에 표현이 바로 보이게)
+    # title: 번역 없이 표현 N개의 영어만 ' · '로 구분해 한 줄에 (push 미리보기에 한눈에).
     if picks:
-        title = _expression_line(picks[0])
+        title = '💬 ' + ' · '.join(exp.en for exp in picks)
     else:
         title = '🌙 오늘의 영어'
 
