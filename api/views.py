@@ -204,6 +204,49 @@ def health(request):
 
 # ============ Shared helpers for enriched notifications ============
 
+# 알림 본문에 한 줄씩 넣는 OPIc 한 줄 꿀팁 (AL 지향 핵심 코칭).
+# 프론트엔드 '오늘 연습할 팁'(OPIC_TIPS)의 title/sub를 한 줄로 압축해 함께 반영.
+OPIC_NOTIFY_TIPS = [
+    # 기본 운영·구조
+    'AL은 어려운 단어 시험이 아니다 — 자연스러운 운영 능력이 핵심',
+    '답변 흐름: Intro → Main Point → What/Feeling/Why → Detail → Example → Lesson → Summary',
+    '답변은 Main Point 먼저 — "Well, I would say I really like..."로 시작',
+    '첫 문장은 무조건 쉽게 — "Well, when it comes to ~"로 안전하게 출발',
+    'Main Point 직후 What / Feeling / Why 세 묶음으로 풀어주기',
+    '8~15문장이면 충분 — 짧고 구조적인 답이 더 강하다',
+    # 분량 늘리기
+    'Body 안 늘어나면 디테일·감정·예시·비교·의견 중 2~3개만 더 붙이기',
+    '40초 답(묘사·습관·취향)은 7문장 템플릿에 끼워 넣기',
+    '1분 답(과거 경험·비교)은 When/What/Feeling/Lesson 순으로',
+    # 유형별
+    '묘사 문제는 정보 나열보다 느낌·분위기 — 사람·사물·공간의 인상',
+    '과거 경험: When → What → Feeling → Lesson 순서로',
+    '비교 문제는 "In the past... / These days..." 대비 구조 (AL 핵심 유형)',
+    'AI·기술 소재는 과거 vs 현재 비교에서 자연스럽게 녹이기',
+    # 롤플레이
+    '롤플은 문법보다 상황 해결 — 공손하고 자연스럽게',
+    '롤플 질문: 인사 → 목적 → 질문 3~4개 → 마무리',
+    '롤플 문제해결 5단: 인사 → 사과 톤 목적 → 상황 설명 → 대안 → 마무리',
+    # 표현·전달
+    '필러(Well, Honestly, You know, Actually) 섞되 같은 필러 반복은 NG',
+    '같은 단어 반복 줄이기 — 표현 다양성이 레벨을 가른다',
+    '시제 안정적으로 — 사건은 과거, 습관은 현재',
+    '고급 인상: 시제·부사·구동사·연결어를 의식적으로 섞기',
+    '마무리는 "So overall..." / "So that\'s why..."로 자연스럽게 멈추기',
+    # 멘탈·전략
+    '답이 안 떠오르면 멈추지 말고 비상 구조(아는 방향)로 틀기',
+    '모르는 주제가 나와도 당황 X — 내가 아는 경험으로 끌고 오기',
+    '콤보 대비: 주제 1개 = 5방향(묘사·루틴·경험·비교·롤플)으로 연습',
+    '주제마다 외우지 말고 재활용 스토리 4개 묶음으로 준비',
+]
+
+
+def pick_opic_tip():
+    """알림용 OPIc 한 줄 팁 랜덤 1개."""
+    import random
+    return random.choice(OPIC_NOTIFY_TIPS)
+
+
 def pick_random_expression():
     """Return one random Expression (model instance), or None."""
     import random
@@ -338,11 +381,18 @@ def resolve_user_label(user_obj_or_username) -> str:
     return user_obj_or_username.display_name or user_obj_or_username.username
 
 
-def _expression_line(exp) -> str:
-    line = f'💬 {exp.en}'
+def _expression_block(exp) -> list:
+    """표현 한 개를 본문 줄들로. 번역 + (있으면) 예문까지.
+    Slack mrkdwn — 예문은 이탤릭(`_..._`)으로 들여쓰기.
+    """
+    head = f'💬 *{exp.en}*'
     if exp.ko:
-        line += f' — {exp.ko}'
-    return line
+        head += f' — {exp.ko}'
+    block = [head]
+    ex = (exp.example or '').strip()
+    if ex:
+        block.append(f'    _{ex}_')
+    return block
 
 
 def build_notification(user=None, status_line: str = '', flavor: str = '', expressions_count: int = 3):
@@ -351,7 +401,9 @@ def build_notification(user=None, status_line: str = '', flavor: str = '', expre
     안드로이드/Slack mobile push 미리보기는 title + 본문 앞 몇 줄만 보여주므로,
     리마인드 핵심인 영어 표현을 **title과 본문 맨 위**에 배치한다.
 
-    본문 순서: 표현 N개 → 빈 줄 → 명언 → 진척도(status_line) → 격려(flavor)
+    본문 순서:
+      (title과 간격용 빈 줄 2개) → 표현 N개(번역+예문) → 빈 줄
+      → 명언 → OPIc 한 줄 꿀팁 → 빈 줄 → 진척도(status_line) → 격려(flavor)
 
     user를 넘기면 그 user의 첨삭/노트 표현을 우선 선택, 부족하면 curated 보충.
     Returns: (title, body) 튜플.
@@ -364,9 +416,10 @@ def build_notification(user=None, status_line: str = '', flavor: str = '', expre
     else:
         title = '🌙 오늘의 영어'
 
-    lines = []
+    # title(header)과 본문(section) 사이를 더 띄우기 위해 본문을 빈 줄 2개로 시작.
+    lines = ['', '']
     for exp in picks:
-        lines.append(_expression_line(exp))
+        lines.extend(_expression_block(exp))
     q = pick_random_quote()
     if q and q.get('text'):
         lines.append('')
@@ -374,7 +427,10 @@ def build_notification(user=None, status_line: str = '', flavor: str = '', expre
         if q.get('author'):
             q_line += f' — {q["author"]}'
         lines.append(q_line)
+    # 명언 바로 밑에 OPIc 한 줄 꿀팁
+    lines.append(f'🎯 OPIc 팁: {pick_opic_tip()}')
     if status_line:
+        lines.append('')
         lines.append(status_line)
     if flavor:
         lines.append(flavor)
