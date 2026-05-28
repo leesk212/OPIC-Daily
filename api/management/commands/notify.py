@@ -21,7 +21,7 @@ from django.core.management.base import BaseCommand
 
 from api.mailer import send_via_slack, MailerError
 from api.models import Entry, User
-from api.views import get_settings, build_notification_body, build_status_line, resolve_user_label
+from api.views import get_settings, build_notification, build_status_line, resolve_user_label
 
 
 FLAVORS = [
@@ -103,9 +103,9 @@ class Command(BaseCommand):
             except User.DoesNotExist:
                 pass
 
-        title = '🎉 오늘 영어 완료!' if all_done else '🌙 오늘의 영어 시간'
+        # title은 표현 1개로 자동 생성(push 미리보기에 표현 노출). 완료/미완료는 flavor·진척도로 전달.
         flavor = random.choice(DONE_FLAVORS if all_done else FLAVORS)
-        message = build_notification_body(flavor, status_line, user=user_obj)
+        title, message = build_notification(user=user_obj, status_line=status_line, flavor=flavor)
 
         if options['dry_run']:
             self.stdout.write('=== DRY RUN ===')

@@ -338,23 +338,35 @@ def resolve_user_label(user_obj_or_username) -> str:
     return user_obj_or_username.display_name or user_obj_or_username.username
 
 
-def build_notification_body(*extra_lines, user=None, expressions_count: int = 3):
-    """Append N random expressions (본인 첨삭에서 추출된 것 우선) + random quote to body.
+def _expression_line(exp) -> str:
+    line = f'💬 {exp.en}'
+    if exp.ko:
+        line += f' — {exp.ko}'
+    return line
 
-    user를 넘기면 그 user의 첨삭 표현(source='feedback')을 우선 선택하고,
-    부족하면 curated 풀에서 보충. user가 없으면 풀 전체에서 랜덤.
 
-    Returns: 줄바꿈으로 합쳐진 메시지 문자열.
+def build_notification(user=None, status_line: str = '', flavor: str = '', expressions_count: int = 3):
+    """알림 title + body를 함께 생성.
+
+    안드로이드/Slack mobile push 미리보기는 title + 본문 앞 몇 줄만 보여주므로,
+    리마인드 핵심인 영어 표현을 **title과 본문 맨 위**에 배치한다.
+
+    본문 순서: 표현 N개 → 빈 줄 → 명언 → 진척도(status_line) → 격려(flavor)
+
+    user를 넘기면 그 user의 첨삭/노트 표현을 우선 선택, 부족하면 curated 보충.
+    Returns: (title, body) 튜플.
     """
-    lines = list(extra_lines)
     picks = pick_expressions_for_notification(user=user, n=expressions_count)
+
+    # title: 첫 표현 1개 (push 미리보기 title 줄에 표현이 바로 보이게)
     if picks:
-        lines.append('')
-        for exp in picks:
-            line = f'💬 {exp.en}'
-            if exp.ko:
-                line += f' — {exp.ko}'
-            lines.append(line)
+        title = _expression_line(picks[0])
+    else:
+        title = '🌙 오늘의 영어'
+
+    lines = []
+    for exp in picks:
+        lines.append(_expression_line(exp))
     q = pick_random_quote()
     if q and q.get('text'):
         lines.append('')
@@ -362,7 +374,11 @@ def build_notification_body(*extra_lines, user=None, expressions_count: int = 3)
         if q.get('author'):
             q_line += f' — {q["author"]}'
         lines.append(q_line)
-    return '\n'.join(lines)
+    if status_line:
+        lines.append(status_line)
+    if flavor:
+        lines.append(flavor)
+    return title, '\n'.join(lines)
 
 
 def expression_random(request):
@@ -2393,11 +2409,11 @@ def test_notify(request):
     custom_title = (data.get('title') or '').strip()
     custom_message = (data.get('message') or '').strip()
 
-    title = custom_title or '🌙 매일 영어 — 테스트 알림'
     if custom_message:
+        title = custom_title or '🌙 매일 영어 — 테스트 알림'
         message = custom_message
     else:
-        # cron과 동일한 포맷: "오늘자 Danny 일기 ☐, opic ☐" + 표현 + 명언
+        # cron과 동일한 포맷: 표현 3개(맨 위) + 명언 + 진척도 + flavor. title도 표현 1개.
         from datetime import date
         me = _current_user(request)
         today_str = date.today().isoformat()
@@ -2408,7 +2424,10 @@ def test_notify(request):
         has_opic = entries.filter(mode='opic').exists()
         user_label = resolve_user_label(me) if me else ''
         status_line = build_status_line(user_label, has_diary, has_opic)
-        message = build_notification_body(status_line, user=me)
+        auto_title, message = build_notification(
+            user=me, status_line=status_line, flavor='🔔 (테스트 발송)',
+        )
+        title = custom_title or auto_title
 
     try:
         result = send_via_slack(
