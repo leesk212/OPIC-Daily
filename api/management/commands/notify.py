@@ -34,6 +34,16 @@ FLAVORS = [
     'Done is better than perfect. 일단 가요!',
 ]
 
+# 일기·Opic 둘 다 완료한 날에도 영어 끈을 놓지 않도록 보내는 리마인드 (복습/추가 연습 권유).
+DONE_FLAVORS = [
+    '오늘 일기·Opic 다 했어요! 👏 아래 표현 한 번 더 곱씹어볼까요?',
+    '완료! 🎉 여기서 한 발 더 — 오늘 표현으로 한 문장 더 말해보기',
+    '오늘 목표 달성 ✅ 표현 복습이 진짜 실력으로 굳혀줘요',
+    '둘 다 끝! 🌟 자기 전에 표현 소리 내어 읽으면 머리에 콱 박혀요',
+    '훌륭해요 💪 추가 Opic 한 콤보 더? 부담되면 표현만 훑어도 좋아요',
+    'AL은 매일 조금씩 쌓는 사람의 것. 오늘도 잘했어요 ✨',
+]
+
 
 class Command(BaseCommand):
     help = "Send 'come learn now' Slack notification"
@@ -78,9 +88,9 @@ class Command(BaseCommand):
             ))
             return
 
-        if has_diary and has_opic and not options['force']:
-            self.stdout.write(self.style.SUCCESS('✅ 오늘 둘 다 완료. 알림 안 보냄.'))
-            return
+        # 둘 다 완료여도 알림은 계속 보냄 — 영어 끈을 놓지 않도록 리마인드.
+        # 완료 상태면 격려·복습 톤(DONE_FLAVORS), 미완료면 독려 톤(FLAVORS).
+        all_done = has_diary and has_opic
 
         user_label = resolve_user_label(notify_user)
         status_line = build_status_line(user_label, has_diary, has_opic)
@@ -93,10 +103,9 @@ class Command(BaseCommand):
             except User.DoesNotExist:
                 pass
 
-        title = '🌙 오늘의 영어 시간'
-        message = build_notification_body(
-            random.choice(FLAVORS), status_line, user=user_obj,
-        )
+        title = '🎉 오늘 영어 완료!' if all_done else '🌙 오늘의 영어 시간'
+        flavor = random.choice(DONE_FLAVORS if all_done else FLAVORS)
+        message = build_notification_body(flavor, status_line, user=user_obj)
 
         if options['dry_run']:
             self.stdout.write('=== DRY RUN ===')
