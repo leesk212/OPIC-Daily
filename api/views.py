@@ -10,7 +10,7 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
-from .ai_client import call_claude, ClaudeCodeError, diagnose as claude_diagnose
+from .ai_client import call_claude, call_claude_vision, ClaudeCodeError, diagnose as claude_diagnose
 from .models import Entry, Expression, Preference, User
 from .prompts import build_diary_prompt, build_opic_prompt
 
@@ -1363,11 +1363,12 @@ def _fetch_url_text(url: str, max_chars: int = 30000, timeout: int = 15) -> str:
 @csrf_exempt
 @require_http_methods(['POST'])
 def admin_expressions_extract(request):
-    """Extract expressions from a URL, pasted text, or uploaded text file. Admin-only.
+    """Extract expressions from a URL, pasted text, or uploaded file (text/pdf/image). Admin-only.
 
     Accepts either JSON body:
       { "source_type": "url" | "text", "value": "...", "count": 20, "model": "sonnet" }
-    Or multipart form-data with `file` (.txt/.md), plus `count`/`model` fields.
+    Or multipart form-data with `file` (.txt/.md/.pdf or 이미지), plus `count`/`model` fields.
+    이미지는 Claude 비전(Read 도구)으로 직접 표현을 추출한다.
     """
     if not _require_admin(request):
         return JsonResponse({'error': '관리자 인증 필요'}, status=403)
@@ -1377,16 +1378,43 @@ def admin_expressions_extract(request):
     source_label = ''
     count = 20
     model = 'sonnet'
+    image_path = None  # set when an image is uploaded → Claude vision 경로로 분기
 
     # categories filter — supplied in either JSON body or form field (comma-separated)
     categories = []
+
+    IMAGE_EXTS = ('.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.heic', '.heif')
 
     if request.content_type and request.content_type.startswith('multipart/form-data'):
         upload = request.FILES.get('file')
         if not upload:
             return JsonResponse({'error': '파일이 첨부되지 않았어요'}, status=400)
         name = (upload.name or '').lower()
-        if name.endswith('.pdf'):
+        if name.endswith(IMAGE_EXTS):
+            # 이미지: 디스크에 임시 저장 후 Claude 비전으로 직접 표현 추출 (텍스트 변환 단계 생략)
+            import uuid
+            from pathlib import Path
+            from django.conf import settings as ds
+            try:
+                data_bytes = upload.read(10 * 1024 * 1024)  # cap 10MB
+            except Exception as e:
+                return JsonResponse({'error': f'이미지 읽기 실패: {e}'}, status=400)
+            if not data_bytes:
+                return JsonResponse({'error': '이미지가 비어있어요'}, status=400)
+            ext = name[name.rfind('.'):]
+            tmp_dir = Path(ds.BASE_DIR) / 'data' / 'recordings' / 'tmp'
+            tmp_dir.mkdir(parents=True, exist_ok=True)
+            image_path = str(tmp_dir / f'extract-{uuid.uuid4().hex}{ext}')
+            try:
+                with open(image_path, 'wb') as fh:
+                    fh.write(data_bytes)
+            except Exception as e:
+                return JsonResponse({'error': f'이미지 저장 실패: {e}'}, status=400)
+            # 비전 경로에서는 source_text가 마커 역할 (빈 본문 체크 통과용)
+            source_text = ('(The source material is the IMAGE you just read with the Read tool. '
+                           'Extract the most useful English expressions from any English text, '
+                           'captions, handwriting, or subtitles visible in it.)')
+        elif name.endswith('.pdf'):
             try:
                 from pypdf import PdfReader
                 from io import BytesIO
@@ -1408,8 +1436,8 @@ def admin_expressions_extract(request):
             except Exception as e:
                 return JsonResponse({'error': f'파일 읽기 실패: {e}'}, status=400)
         else:
-            return JsonResponse({'error': '.txt, .md, .pdf 파일만 지원합니다. 다른 형식은 텍스트로 붙여넣어 주세요.'}, status=400)
-        source_label = f'file:{upload.name}'
+            return JsonResponse({'error': '.txt · .md · .pdf · 이미지(png/jpg/webp/heic 등)만 지원합니다. 다른 형식은 텍스트로 붙여넣어 주세요.'}, status=400)
+        source_label = (f'image:{upload.name}' if image_path else f'file:{upload.name}')
         try:
             count = max(5, min(60, int(request.POST.get('count', 20))))
         except (TypeError, ValueError):
@@ -1468,9 +1496,20 @@ def admin_expressions_extract(request):
     )
 
     try:
-        raw = call_claude(prompt, model=model, timeout=240)
+        if image_path:
+            # 이미지는 모델이 Read 도구로 직접 읽음 — 더 넉넉한 타임아웃
+            raw = call_claude_vision(image_path, prompt, model=model, timeout=300)
+        else:
+            raw = call_claude(prompt, model=model, timeout=240)
     except ClaudeCodeError as e:
         return JsonResponse({'error': f'Claude 호출 실패: {e}'}, status=500)
+    finally:
+        if image_path:
+            try:
+                import os
+                os.remove(image_path)
+            except OSError:
+                pass
 
     parsed, parse_err = _extract_json(raw)
     if parse_err or not isinstance(parsed, list):

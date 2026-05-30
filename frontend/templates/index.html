@@ -577,6 +577,33 @@
   }
   .admin-result.is-error { border-left-color: var(--danger); }
   .admin-result strong { color: var(--text); }
+  /* L1 segmented tabs for 콘텐츠 추가 (✨ 생성 / 📝 보강 / 📎 추출) */
+  .admin-l1-tabs {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+  .admin-l1-tab {
+    background: none;
+    border: none;
+    padding: 8px 18px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 9px;
+    transition: all 0.12s;
+  }
+  .admin-l1-tab:hover { color: var(--text); }
+  .admin-l1-tab.active {
+    background: var(--accent);
+    color: #fff;
+  }
   .admin-source-tabs {
     display: flex;
     gap: 4px;
@@ -3489,9 +3516,7 @@
         <nav class="admin-nav">
           <button class="admin-nav-item active" data-admin-section="users">👥 사용자</button>
           <button class="admin-nav-item" data-admin-section="slack">🔔 Slack 알림</button>
-          <button class="admin-nav-item" data-admin-section="ai-fetch">🤖 AI 생성</button>
-          <button class="admin-nav-item" data-admin-section="extract">📎 자료 추출</button>
-          <button class="admin-nav-item" data-admin-section="enrich">✨ 보강</button>
+          <button class="admin-nav-item" data-admin-section="content">🤖 콘텐츠 추가</button>
           <button class="admin-nav-item" data-admin-section="expressions">💬 표현 <span class="admin-nav-count" id="adm-count-expr">…</span></button>
           <button class="admin-nav-item" data-admin-section="quotes">📜 명언 <span class="admin-nav-count" id="adm-count-quote">…</span></button>
           <button class="admin-nav-item" data-admin-section="combos">📚 콤보 <span class="admin-nav-count" id="adm-count-combo">…</span></button>
@@ -3582,15 +3607,25 @@
         </div>
 
         <!-- ===== AI Fetch (expressions / quotes / combos) ===== -->
-        <div class="admin-section-panel" data-admin-panel="ai-fetch" hidden>
-          <h2 class="admin-section-title">🤖 AI로 더 만들기</h2>
+        <div class="admin-section-panel" data-admin-panel="content" hidden>
+          <h2 class="admin-section-title">🤖 콘텐츠 추가</h2>
+          <p class="admin-card-sub" style="margin:-4px 0 16px;">AI로 새로 만들거나(✨ 생성), 모아둔 노트를 다듬어 넣거나(📝 보강), 외부 자료에서 뽑아냅니다(📎 추출). — 모두 라이브러리에 콘텐츠를 더하는 기능이에요.</p>
+
+          <div class="admin-l1-tabs">
+            <button class="admin-l1-tab active" data-content-tab="generate">✨ 생성</button>
+            <button class="admin-l1-tab" data-content-tab="enrich">📝 보강</button>
+            <button class="admin-l1-tab" data-content-tab="extract">📎 추출</button>
+          </div>
+
+          <!-- ===== ✨ 생성 group (AI fetch) ===== -->
+          <div data-content-group="generate">
 
           <div class="admin-card">
             <div class="admin-source-tabs" style="margin-bottom:14px;">
               <button class="admin-source-tab active" data-fetch-type="expressions">💬 표현</button>
               <button class="admin-source-tab" data-fetch-type="quotes">📜 명언</button>
               <button class="admin-source-tab" data-fetch-type="combos">📚 콤보</button>
-              <button class="admin-source-tab" data-fetch-type="enrich">✨ 보강</button>
+              <button class="admin-source-tab" data-fetch-type="enrich">🔧 팁 채우기</button>
             </div>
 
             <!-- Expressions panel -->
@@ -3659,19 +3694,18 @@
             <div class="admin-added-list" id="admin-fetch-added-list"></div>
             <button class="ghost-btn" id="admin-fetch-go-section" style="margin-top:10px;">→ 카탈로그에서 보기</button>
           </div>
-        </div>
+          </div><!-- /generate group -->
 
-        <!-- ===== Source Extract ===== -->
-        <div class="admin-section-panel" data-admin-panel="extract" hidden>
-          <h2 class="admin-section-title">📎 자료에서 표현 추출</h2>
+          <!-- ===== 📎 추출 group (source extract) ===== -->
+          <div data-content-group="extract" hidden>
 
           <div class="admin-card">
-            <div class="admin-card-sub">URL · 텍스트 · 파일(.txt/.md/.pdf)에서 AI가 좋은 영어 표현만 골라 DB에 추가합니다.<br>🎬 <strong>YouTube</strong> 링크는 자막 자동 추출, 📷 <strong>Instagram</strong> 링크는 캡션(og:meta)으로.</div>
+            <div class="admin-card-sub">URL · 텍스트 · 파일(.txt/.md/.pdf) · <strong>이미지</strong>에서 AI가 좋은 영어 표현만 골라 DB에 추가합니다.<br>🎬 <strong>YouTube</strong> 링크는 자막 자동 추출, 📷 <strong>Instagram</strong> 링크는 캡션(og:meta)으로.<br>🖼 <strong>이미지</strong>(스크린샷·필기·캡처)는 Claude 비전이 직접 읽어 표현을 뽑아요.</div>
 
             <div class="admin-source-tabs">
               <button class="admin-source-tab active" data-src-tab="url">🔗 URL</button>
               <button class="admin-source-tab" data-src-tab="text">📝 텍스트</button>
-              <button class="admin-source-tab" data-src-tab="file">📁 파일</button>
+              <button class="admin-source-tab" data-src-tab="file">📁 파일·이미지</button>
             </div>
 
             <div class="error-box" id="admin-extract-error" hidden></div>
@@ -3683,8 +3717,8 @@
               <textarea class="admin-extract-textarea" id="admin-extract-text" placeholder="추출할 영어 본문을 여기에 붙여넣기 (최대 30,000자)" rows="8"></textarea>
             </div>
             <div class="admin-source-panel" data-src-panel="file" hidden>
-              <input type="file" id="admin-extract-file" accept=".txt,.md,.markdown,.pdf">
-              <div class="admin-card-sub" style="margin-top:6px;">지원: .txt · .md · .pdf (최대 10MB)</div>
+              <input type="file" id="admin-extract-file" accept=".txt,.md,.markdown,.pdf,.png,.jpg,.jpeg,.webp,.gif,.bmp,.heic,.heif,image/*">
+              <div class="admin-card-sub" style="margin-top:6px;">지원: .txt · .md · .pdf · 이미지(png/jpg/webp/heic) (최대 10MB)</div>
             </div>
 
             <div class="section-label" style="margin: 14px 0 6px;">🏷 카테고리 (다중 선택 — 비워두면 자동 분류)</div>
@@ -3713,11 +3747,10 @@
             <div class="admin-added-list" id="admin-extract-added-list"></div>
             <button class="ghost-btn" id="admin-extract-go-expressions" style="margin-top:10px;">💬 전체 표현에서 보기 →</button>
           </div>
-        </div>
+          </div><!-- /extract group -->
 
-        <!-- ===== Enrich (user notes → expressions / combos) ===== -->
-        <div class="admin-section-panel" data-admin-panel="enrich" hidden>
-          <h2 class="admin-section-title">✨ 보강</h2>
+          <!-- ===== 📝 보강 group (user notes → expressions / combos) ===== -->
+          <div data-content-group="enrich" hidden>
 
           <div class="admin-source-tabs">
             <button class="admin-source-tab active" data-enrich-tab="expressions">💬 표현 보강</button>
@@ -3865,7 +3898,8 @@ think outside the box
               </div>
             </div>
           </div>
-        </div>
+          </div><!-- /enrich group -->
+        </div><!-- /content panel -->
 
         <!-- ===== Expressions catalog ===== -->
         <div class="admin-section-panel" data-admin-panel="expressions" hidden>
@@ -9053,6 +9087,12 @@ Now output ONLY the JSON object:`;
     }
   }
 
+  // --- 콘텐츠 추가: L1 탭 (✨ 생성 / 📝 보강 / 📎 추출) ---
+  function switchContentTab(name) {
+    document.querySelectorAll('.admin-l1-tab').forEach(b => b.classList.toggle('active', b.dataset.contentTab === name));
+    document.querySelectorAll('[data-content-group]').forEach(g => g.hidden = g.dataset.contentGroup !== name);
+  }
+
   // --- AI generation (expressions / quotes / combos) ---
   let adminFetchType = 'expressions';
 
@@ -9275,8 +9315,10 @@ Now output ONLY the JSON object:`;
   let adminExtractMode = 'url';
   function setAdminExtractMode(mode) {
     adminExtractMode = mode;
-    document.querySelectorAll('.admin-source-tab').forEach(t => t.classList.toggle('active', t.dataset.srcTab === mode));
-    document.querySelectorAll('.admin-source-panel').forEach(p => p.hidden = p.dataset.srcPanel !== mode);
+    // 추출 그룹 안으로 스코프 — 전역 .admin-source-tab을 토글하면 생성·보강 탭의 active가 벗겨짐
+    const scope = document.querySelector('[data-content-group="extract"]') || document;
+    scope.querySelectorAll('.admin-source-tab[data-src-tab]').forEach(t => t.classList.toggle('active', t.dataset.srcTab === mode));
+    scope.querySelectorAll('.admin-source-panel').forEach(p => p.hidden = p.dataset.srcPanel !== mode);
   }
   async function adminExtractExpressions() {
     const errEl = document.getElementById('admin-extract-error');
@@ -9654,6 +9696,10 @@ Now output ONLY the JSON object:`;
   // 🤖 AI fetch type tabs (expressions / quotes / combos)
   document.querySelectorAll('[data-fetch-type]').forEach(tab => {
     tab.addEventListener('click', () => setAdminFetchType(tab.dataset.fetchType));
+  });
+  // 🤖 콘텐츠 추가 L1 탭 (✨ 생성 / 📝 보강 / 📎 추출)
+  document.querySelectorAll('.admin-l1-tab').forEach(tab => {
+    tab.addEventListener('click', () => switchContentTab(tab.dataset.contentTab));
   });
   // sidebar nav
   document.querySelectorAll('.admin-nav-item').forEach(btn => {

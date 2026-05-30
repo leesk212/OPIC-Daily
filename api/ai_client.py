@@ -82,6 +82,73 @@ def call_claude(prompt: str, model: str = 'haiku', timeout: int = 180) -> str:
     return stdout
 
 
+def call_claude_vision(image_path: str, prompt: str, model: str = 'sonnet',
+                       timeout: int = 300) -> str:
+    """
+    Call Claude with an image by letting the CLI's Read tool view the file.
+
+    `claude -p` 비대화 모드에서 `--allowedTools Read`로 Read 도구를 자동 허용하고,
+    이미지 파일을 읽게 한 뒤 prompt 지시대로 응답하게 한다. 이미지 디렉터리는
+    `--add-dir`로 접근 허용. 반환: 모델 stdout. 실패 시 ClaudeCodeError.
+    """
+    import os
+
+    model_arg = MODEL_MAP.get(model, MODEL_MAP['sonnet'])
+    # realpath: macOS의 /tmp → /private/tmp 같은 심볼릭 링크 해소 (--add-dir 가 실제 경로 요구)
+    abs_path = os.path.realpath(image_path)
+    img_dir = os.path.dirname(abs_path)
+    cmd = [
+        'claude', '-p', '--model', model_arg,
+        '--allowedTools', 'Read',
+        '--add-dir', img_dir,
+    ]
+    full_prompt = (
+        'Use the Read tool to view this image file, then follow the instructions below.\n'
+        f'Image path: {abs_path}\n\n'
+        '----- INSTRUCTIONS -----\n'
+        f'{prompt}'
+    )
+
+    logger.info(f'Invoking Claude vision: model={model_arg}, image={abs_path}, prompt_len={len(full_prompt)}')
+
+    try:
+        result = subprocess.run(
+            cmd,
+            input=full_prompt,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except FileNotFoundError:
+        raise ClaudeCodeError(
+            "'claude' 명령어를 찾을 수 없어요. "
+            "Claude Code가 설치되어 있고 PATH에 있는지 확인하세요."
+        )
+    except subprocess.TimeoutExpired:
+        raise ClaudeCodeError(f'Claude 이미지 분석이 {timeout}초 안에 끝나지 않았어요.')
+    except Exception as e:
+        raise ClaudeCodeError(f'Claude 호출 중 예외: {type(e).__name__}: {e}')
+
+    stdout = (result.stdout or '').strip()
+    stderr = (result.stderr or '').strip()
+    logger.info(f'Claude vision exit={result.returncode}, stdout_len={len(stdout)}, stderr_len={len(stderr)}')
+
+    if result.returncode != 0:
+        parts = [f'Claude CLI exit {result.returncode}']
+        if stderr:
+            parts.append(f'stderr: {stderr[:1500]}')
+        if stdout:
+            parts.append(f'stdout: {stdout[:1500]}')
+        raise ClaudeCodeError(' | '.join(parts))
+
+    if not stdout:
+        raise ClaudeCodeError(
+            f'Claude가 빈 출력을 반환했어요. stderr: {stderr[:500] if stderr else "(empty)"}'
+        )
+
+    return stdout
+
+
 def diagnose() -> dict:
     """진단용. Claude CLI가 동작 가능한지 단계별 체크."""
     info: dict = {}
